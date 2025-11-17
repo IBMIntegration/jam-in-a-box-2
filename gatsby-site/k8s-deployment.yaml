@@ -1,0 +1,94 @@
+---
+# Deployment for JB Labs pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{NAME}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{NAME}}
+  template:
+    metadata:
+      labels:
+        app: {{NAME}}
+    spec:
+      containers:
+      - name: {{NAME}}
+        image: node
+        ports:
+        - containerPort: 8000
+          name: http
+        command:
+        - "/bin/sh"
+        - "/scripts/start-server.sh"
+        - "--content-root=/app/content"
+        workingDir: /app
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+          readOnly: true
+        - name: app-volume
+          mountPath: /app
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: npm_config_cache
+          value: "/app/.npm"
+        - name: npm_config_init_module
+          value: "/app/.npm-init.js"
+        - name: npm_config_userconfig
+          value: "/app/.npmrc"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "2Gi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 1200
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 1200
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: script-volume
+        configMap:
+          name: {{NAME}}-script
+          defaultMode: 0755
+      - name: app-volume
+        emptyDir: {}
+
+---
+# Service to expose the JB Labs pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{NAME}}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: {{NAME}}

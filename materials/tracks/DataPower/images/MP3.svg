@@ -1,0 +1,140 @@
+<svg width="700" height="400" xmlns="http://www.w3.org/2000/svg">
+  <!-- IBM Color Palette CSS Styles -->
+  <defs>
+    <style>
+      .background { fill: #f4f4f4; stroke: #e0e0e0; stroke-width: 1; }
+      .title-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #161616; }
+      .protocol-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 11px; font-weight: 500; fill: #ffffff; }
+      .service-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 10px; font-weight: 500; fill: #161616; }
+      .gateway-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #161616; }
+      .annotation-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9px; fill: #525252; }
+      
+      /* Connection lines */
+      .connection-line { stroke: #393939; stroke-width: 2; }
+      .dotted-line { stroke: #525252; stroke-width: 1.5; stroke-dasharray: 4,4; }
+      .double-arrow { stroke: #0f62fe; stroke-width: 2; marker-end: url(#arrowhead); }
+      .stateful-arrow { stroke: #8a3ffc; stroke-width: 2; marker-end: url(#arrowhead-purple); }
+      
+      /* Protocol squares - IBM colors */
+      .http-protocol { fill: #0f62fe; stroke: #0043ce; stroke-width: 2; }
+      .https-protocol { fill: #24a148; stroke: #198038; stroke-width: 2; }
+      .mq-protocol { fill: #ff7832; stroke: #eb6200; stroke-width: 2; }
+      .stateful-protocol { fill: #8a3ffc; stroke: #6929c4; stroke-width: 2; }
+      
+      /* Gateway box */
+      .gateway-box { fill: #edf5ff; stroke: #393939; stroke-width: 2; }
+      
+      /* Back-end service */
+      .service-tower { fill: #e0e0e0; stroke: #8d8d8d; stroke-width: 2; }
+      .service-screen { fill: #393939; stroke: #161616; stroke-width: 1; }
+      
+      .protocol-box { rx: 4; ry: 4; }
+    </style>
+    
+    <!-- Arrow marker definitions -->
+    <marker id="arrowhead" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+      <polygon points="0 0, 6 2.5, 0 5" fill="#0f62fe" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+      <polygon points="0 0, 6 2.5, 0 5" fill="#8a3ffc" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="700" height="400" class="background protocol-box"/>
+  
+  <!-- Title -->
+  <text x="350" y="25" text-anchor="middle" class="title-text">DataPower Multi-Protocol Gateway - Full Configuration</text>
+  
+  <!-- Main diagram content group - adjust transform to reposition entire diagram -->
+  <g transform="translate(0,0)">
+    <!-- Gateway Box in Middle -->
+    <rect x="175" y="70" width="250" height="220" class="gateway-box"/>
+    <text x="300" y="90" text-anchor="middle" class="gateway-text">Multi-Protocol Gateway</text>
+    
+    <!-- Front-side Protocol Squares (higher z-index by placing after gateway) -->
+    <!-- HTTP -->
+    <rect x="125" y="80" width="80" height="40" class="http-protocol protocol-box"/>
+    <text x="165" y="104" text-anchor="middle" class="protocol-text">HTTP</text>
+    
+    <!-- HTTPS -->
+    <rect x="125" y="130" width="80" height="40" class="https-protocol protocol-box"/>
+    <text x="165" y="154" text-anchor="middle" class="protocol-text">HTTPS</text>
+    
+    <!-- MQ -->
+    <rect x="125" y="180" width="80" height="40" class="mq-protocol protocol-box"/>
+    <text x="165" y="204" text-anchor="middle" class="protocol-text">MQ</text>
+    
+    <!-- Stateful -->
+    <rect x="125" y="230" width="80" height="40" class="stateful-protocol protocol-box"/>
+    <text x="165" y="254" text-anchor="middle" class="protocol-text">Stateful</text>
+    
+    <!-- Dotted lines inside gateway -->
+    <!-- HTTP/HTTPS/MQ protocols connect to first three services -->
+    <!-- HTTP protocol connections -->
+    <line x1="205" y1="100" x2="425" y2="110" class="dotted-line"/>
+    <line x1="205" y1="100" x2="425" y2="160" class="dotted-line"/>
+    <line x1="205" y1="100" x2="425" y2="210" class="dotted-line"/>
+    
+    <!-- HTTPS protocol connections -->
+    <line x1="205" y1="150" x2="425" y2="110" class="dotted-line"/>
+    <line x1="205" y1="150" x2="425" y2="160" class="dotted-line"/>
+    <line x1="205" y1="150" x2="425" y2="210" class="dotted-line"/>
+    
+    <!-- MQ protocol connections -->
+    <line x1="205" y1="200" x2="425" y2="110" class="dotted-line"/>
+    <line x1="205" y1="200" x2="425" y2="160" class="dotted-line"/>
+    <line x1="205" y1="200" x2="425" y2="210" class="dotted-line"/>
+    
+    <!-- Stateful protocol connects only to Stateful service -->
+    <line x1="205" y1="250" x2="425" y2="260" class="dotted-line"/>
+    
+    <!-- Arrows to back-end services (starting from connection points) -->
+    <line x1="425" y1="110" x2="495" y2="110" class="double-arrow"/>
+    <line x1="425" y1="160" x2="495" y2="160" class="double-arrow"/>
+    <line x1="425" y1="210" x2="495" y2="210" class="double-arrow"/>
+    <line x1="425" y1="260" x2="495" y2="260" class="stateful-arrow"/>
+    
+    <!-- Service connection points on right edge of gateway (higher z-index by placing after arrows) -->
+    <circle cx="425" cy="110" r="6" fill="#0f62fe"/>  <!-- HTTP service -->
+    <circle cx="425" cy="160" r="6" fill="#24a148"/>  <!-- HTTPS service -->
+    <circle cx="425" cy="210" r="6" fill="#ff7832"/>  <!-- MQ service -->
+    <circle cx="425" cy="260" r="6" fill="#8a3ffc"/>  <!-- Stateful service -->
+    
+    <!-- Back-end Services (Computer Towers) with increased vertical spacing -->
+    <!-- HTTP Service -->
+    <rect x="505" y="90" width="50" height="40" class="service-tower"/>
+    <rect x="510" y="95" width="30" height="15" class="service-screen"/>
+    <rect x="510" y="115" width="20" height="2" class="service-screen"/>
+    <circle cx="545" cy="120" r="2" fill="#24a148"/>
+    <text x="565" y="115" class="service-text">HTTP</text>
+    
+    <!-- HTTPS Service -->
+    <rect x="505" y="140" width="50" height="40" class="service-tower"/>
+    <rect x="510" y="145" width="30" height="15" class="service-screen"/>
+    <rect x="510" y="165" width="20" height="2" class="service-screen"/>
+    <circle cx="545" cy="170" r="2" fill="#24a148"/>
+    <text x="565" y="165" class="service-text">HTTPS</text>
+    
+    <!-- MQ Service -->
+    <rect x="505" y="190" width="50" height="40" class="service-tower"/>
+    <rect x="510" y="195" width="30" height="15" class="service-screen"/>
+    <rect x="510" y="215" width="20" height="2" class="service-screen"/>
+    <circle cx="545" cy="220" r="2" fill="#24a148"/>
+    <text x="565" y="215" class="service-text">MQ</text>
+    
+    <!-- Stateful Service -->
+    <rect x="505" y="240" width="50" height="40" class="service-tower"/>
+    <rect x="510" y="245" width="30" height="15" class="service-screen"/>
+    <rect x="510" y="265" width="20" height="2" class="service-screen"/>
+    <circle cx="545" cy="270" r="2" fill="#24a148"/>
+    <text x="565" y="265" class="service-text">Stateful</text>
+  </g>
+  
+  <!-- Annotations -->
+  <g transform="translate(0,15)">
+    <text x="25" y="320" class="annotation-text">HTTP, HTTPS, MQ protocols can connect to any of their respective back-end services</text>
+    <text x="25" y="335" class="annotation-text">Stateful protocol maintains session state - connects only to Stateful service</text>
+    <text x="25" y="350" class="annotation-text">Gateway provides protocol transformation and routing flexibility</text>
+  </g>
+</svg>

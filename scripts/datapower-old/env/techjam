@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# shellcheck disable=SC2034
+
+BASE_DOMAIN='apic.home.rocketcode.dev'
+HOSTS=(idg/rest:443)
+ADMIN_USER="admin"
+ADMIN_PASS="$(kubectl get secrets datapower-admin-credentials -o json | \
+  jq -r '.data.password|@base64d')"

@@ -1,0 +1,10 @@
+{
+  "_comment_main_server": "Main MD Handler Server Configuration",
+  "port": 8080,
+  "basePath": "./materials",
+  "host": "0.0.0.0",
+  
+  "_comment_admin_server": "Admin Server Configuration (uses admin- prefix)",
+  "admin-port": 8082,
+  "admin-host": "0.0.0.0"
+}

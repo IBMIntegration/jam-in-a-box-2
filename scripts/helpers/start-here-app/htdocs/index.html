@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tech Jam URL Assistant</title>
+  <script
+    src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"
+  ></script>
+  <script src="./js/rest-client.js"></script>
+  <link rel="stylesheet" type="text/css" href="./public/styles.css"/>
+</head>
+<body>
+  <h1 class="headline">Tech Jam URL Assistant</h1>
+  <div class="content">
+    <div class="left-panel">
+      <div class="form-section" id="host-selector">
+        <h2>Request</h2>
+        <label for="host">Host:</label>
+        <h3>Method and path</h3>
+        <div class="field-wrapper">
+          <label for="method">Method:</label>
+          <select name="method" title="method">
+            <option name="CONNECT">CONNECT</option>
+            <option name="DELETE">DELETE</option>
+            <option name="GET" class="highlight">GET</option>
+            <option name="HEAD">HEAD</option>  
+            <option name="OPTIONS">OPTIONS</option>
+            <option name="PATCH">PATCH</option>  
+            <option name="POST" selected class="highlight">POST</option>
+            <option name="PUT" class="highlight">PUT</option>  
+            <option name="TRACE">TRACE</option>  
+          </select>
+        </div>
+        <div class="field-wrapper">
+          <label for="method">Path:</label>
+          <input
+            title="path" type="text" name="path" label="path"
+            placeholder="/path/to/resource"
+          />
+        </div>
+      </div>
+      <div class="form-section" id="request-headers">
+        <h3>Headers</h3>
+        <div class="field-wrapper">
+          <label for="contentType">Content-Type</label>
+          <select name="contentType" title="contentType">
+            <option name="application/json">application/json</option>
+            <option name="application/xml charset=utf-8" selected>application/xml charset=utf-8</option>
+            <option name="text/plain">text/plain</option>
+          </select>
+        </div>
+        <div class="additional-headers"></div>
+        <button class="major" name="add-header">Add header</button>
+      </div>
+      <div class="form-section" id="request-body">
+        <label for="body-content">Body content</label>
+        <textarea name="body-content" title="content"></textarea>
+      </div>
+      <div class="form-section" id="send">
+        <button class="major" type="button" name="send">Send</button>
+      </div>
+      <div class="response-section" id="response-headers"></div>
+      <div class="response-section" id="response-body"></div>
+    </div>
+    <div class="right-panel">
+      <div class="links">
+        <h2>Links</h2>
+        <div class="link-groups"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

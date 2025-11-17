@@ -1,0 +1,72 @@
+<svg width="350" height="350" xmlns="http://www.w3.org/2000/svg">
+  <!-- IBM Color Palette CSS Styles -->
+  <defs>
+    <style>
+      .background { fill: #f4f4f4; stroke: #e0e0e0; stroke-width: 1; }
+      .title-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #161616; }
+      .domain-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 11px; font-weight: 500; fill: #ffffff; }
+      .annotation-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9px; fill: #525252; }
+      .connection-line { stroke: #393939; stroke-width: 2; }
+      .vertical-line { stroke: #393939; stroke-width: 2; }
+      .horizontal-line { stroke: #393939; stroke-width: 2; }
+      
+      /* IBM Blue - Primary domain */
+      .default-domain { fill: #0f62fe; stroke: #0043ce; stroke-width: 2; }
+      
+      /* IBM Color variations for child domains */
+      .loyalty-domain { fill: #ee5396; stroke: #d12765; stroke-width: 2; }
+      .ticketing-domain { fill: #ff7832; stroke: #eb6200; stroke-width: 2; }
+      .baggage-domain { fill: #24a148; stroke: #198038; stroke-width: 2; }
+      .revenue-domain { fill: #8a3ffc; stroke: #6929c4; stroke-width: 2; }
+      
+      .domain-box { rx: 4; ry: 4; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="350" height="350" class="background domain-box"/>
+  
+  <!-- Title -->
+  <text x="175" y="25" text-anchor="middle" class="title-text">DataPower Domain Structure</text>
+  
+  <!-- Default domain box (top left) -->
+  <rect x="20" y="50" width="120" height="30" class="default-domain domain-box"/>
+  <text x="80" y="69" text-anchor="middle" class="domain-text">default domain</text>
+  
+  <!-- Main vertical line down from default domain -->
+  <line x1="80" y1="80" x2="80" y2="270" class="vertical-line"/>
+  
+  <!-- Horizontal connector lines to child domains -->
+  <!-- Line to Loyalty domain -->
+  <line x1="80" y1="120" x2="160" y2="120" class="horizontal-line"/>
+  
+  <!-- Line to Ticketing domain -->
+  <line x1="80" y1="170" x2="160" y2="170" class="horizontal-line"/>
+  
+  <!-- Line to Baggage domain -->
+  <line x1="80" y1="220" x2="160" y2="220" class="horizontal-line"/>
+  
+  <!-- Line to Revenue domain -->
+  <line x1="80" y1="270" x2="160" y2="270" class="horizontal-line"/>
+  
+  <!-- Child domain boxes (vertically aligned) -->
+  <!-- Loyalty domain -->
+  <rect x="160" y="105" width="120" height="30" class="loyalty-domain domain-box"/>
+  <text x="220" y="124" text-anchor="middle" class="domain-text">Loyalty domain</text>
+  
+  <!-- Ticketing domain -->
+  <rect x="160" y="155" width="120" height="30" class="ticketing-domain domain-box"/>
+  <text x="220" y="174" text-anchor="middle" class="domain-text">Ticketing domain</text>
+  
+  <!-- Baggage domain -->
+  <rect x="160" y="205" width="120" height="30" class="baggage-domain domain-box"/>
+  <text x="220" y="224" text-anchor="middle" class="domain-text">Baggage domain</text>
+  
+  <!-- Revenue domain -->
+  <rect x="160" y="255" width="120" height="30" class="revenue-domain domain-box"/>
+  <text x="220" y="274" text-anchor="middle" class="domain-text">Revenue domain</text>
+  
+  <!-- Annotations -->
+  <text x="20" y="315" class="annotation-text">Application domains partition DataPower services by business function</text>
+  <text x="20" y="330" class="annotation-text">Each domain provides isolated development and deployment environments</text>
+</svg>

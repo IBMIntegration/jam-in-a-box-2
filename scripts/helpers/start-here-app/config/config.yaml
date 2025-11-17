@@ -1,0 +1,31 @@
+app:
+  title: Tech Jam 2025 Mexico City
+hostSelectors:
+  - student
+  - origin
+hosts:
+  - student: tech-jam-01
+    origin: outside
+    baseUrl: https://tech-jam-01-techjam-mpgw-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+  - student: tech-jam-02
+    origin: outside
+    baseUrl: https://tech-jam-02-techjam-mpgw-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+  - student: tech-jam-03
+    origin: outside
+    baseUrl: https://tech-jam-03-techjam-mpgw-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+  - student: tech-jam-04
+    origin: outside
+    baseUrl: https://tech-jam-04-techjam-mpgw-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+  - student: tech-jam-30
+    origin: outside
+    baseUrl: https://tech-jam-30-techjam-test-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+links:
+  - title: Datapower Web Management
+    href: https://techjam-mpgw-web-mgmt.mexico-april-420eb34f056ae68f3969289d61f61851-0000.us-south.containers.appdomain.cloud
+  - group: Course material
+  - title: Guide A
+  - title: Guide B
+  - group: ''
+  - title: Group
+  - title: without
+  - title: title

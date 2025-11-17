@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# shellcheck disable=SC2034
+
+# Base domain for the DataPower gateways -- will be added to the host
+# names provided in the HOSTS array below.
+BASE_DOMAIN='mycompany.com'
+
+# Array of host names (without domain) or host:port combinations for the
+# DataPower gateways to be managed. If the REST and SSH hostnames are different,
+# use the format ssh-host/rest-host. The default ports are 22 for SSH and 5554
+# for REST. If you require different ports, specify them as host:port.
+# Examples:
+#   HOSTS=(gateway1) -- one gateway, default ports
+#   HOSTS=(gateway1 gateway2) -- two gateways, same hostnames for SSH and REST,
+#     default ports
+#   HOSTS=(gateway1/rest-gateway1 gateway2:9022/rest-gateway2) -- different
+#     hostnames for SSH and REST, custom SSH port for gateway2
+HOSTS=(my-gateway1 my-gateway2)
+
+# Credentials for DataPower admin user
+ADMIN_USER="admin"
+
+# Credentials for DataPower admin user password. In this example, we retrieve
+# the password from a Kubernetes secret. You may also simply provide a string.
+ADMIN_PASS="$(kubectl get secrets datapower-admin-credentials -o json | \
+  jq -r '.data.password|@base64d')"

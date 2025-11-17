@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="60 40 680 505" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- IBM Design Language Color Palette -->
+    <style>
+      :root {
+        /* IBM Blue Family */
+        --ibm-blue-10: #f0f4ff;
+        --ibm-blue-20: #d0e2ff;
+        --ibm-blue-30: #a6c8ff;
+        --ibm-blue-40: #78a9ff;
+        --ibm-blue-50: #4589ff;
+        --ibm-blue-60: #0f62fe;
+        --ibm-blue-70: #0043ce;
+        --ibm-blue-80: #002d9c;
+        --ibm-blue-90: #001d6c;
+        --ibm-blue-100: #001141;
+        
+        /* IBM Gray Family */
+        --ibm-gray-10: #f4f4f4;
+        --ibm-gray-20: #e0e0e0;
+        --ibm-gray-30: #c6c6c6;
+        --ibm-gray-40: #a8a8a8;
+        --ibm-gray-50: #8d8d8d;
+        --ibm-gray-60: #6f6f6f;
+        --ibm-gray-70: #525252;
+        --ibm-gray-80: #393939;
+        --ibm-gray-90: #262626;
+        --ibm-gray-100: #161616;
+        
+        /* IBM Accent Colors */
+        /* Green Family */
+        --ibm-green-10: #defbe6;
+        --ibm-green-20: #a7f0ba;
+        --ibm-green-30: #6fdc8c;
+        --ibm-green-40: #42be65;
+        --ibm-green-50: #24a148;
+        --ibm-green-60: #198038;
+        --ibm-green-70: #0e6027;
+        --ibm-green-80: #044317;
+        --ibm-green-90: #022d0d;
+        --ibm-green-100: #071908;
+        
+        /* Purple Family */
+        --ibm-purple-10: #f6f2ff;
+        --ibm-purple-20: #e8daff;
+        --ibm-purple-30: #d4bbff;
+        --ibm-purple-40: #be95ff;
+        --ibm-purple-50: #a56eff;
+        --ibm-purple-60: #8a3ffc;
+        --ibm-purple-70: #6929c4;
+        --ibm-purple-80: #491d8b;
+        --ibm-purple-90: #31135e;
+        --ibm-purple-100: #1c0f30;
+        
+        /* Red Family */
+        --ibm-red-10: #fff1f1;
+        --ibm-red-20: #ffd7d9;
+        --ibm-red-30: #ffb3b8;
+        --ibm-red-40: #ff8389;
+        --ibm-red-50: #fa4d56;
+        --ibm-red-60: #da1e28;
+        --ibm-red-70: #a2191f;
+        --ibm-red-80: #750e13;
+        --ibm-red-90: #520408;
+        --ibm-red-100: #2d0709;
+        
+        /* Orange Family */
+        --ibm-orange-10: #fff2e8;
+        --ibm-orange-20: #ffd9be;
+        --ibm-orange-30: #ffb784;
+        --ibm-orange-40: #ff832b;
+        --ibm-orange-50: #eb6200;
+        --ibm-orange-60: #ba4e00;
+        --ibm-orange-70: #8a3800;
+        --ibm-orange-80: #5e2900;
+        --ibm-orange-90: #3e1a00;
+        --ibm-orange-100: #231000;
+        
+        /* Yellow Family */
+        --ibm-yellow-10: #fcf4d6;
+        --ibm-yellow-20: #fddc69;
+        --ibm-yellow-30: #f1c21b;
+        --ibm-yellow-40: #d2a106;
+        --ibm-yellow-50: #b28600;
+        --ibm-yellow-60: #8e6a00;
+        --ibm-yellow-70: #684e00;
+        --ibm-yellow-80: #483700;
+        --ibm-yellow-90: #302400;
+        --ibm-yellow-100: #1c1500;
+        
+        /* Cyan Family */
+        --ibm-cyan-10: #e5f6ff;
+        --ibm-cyan-20: #bae6ff;
+        --ibm-cyan-30: #82cfff;
+        --ibm-cyan-40: #33b1ff;
+        --ibm-cyan-50: #1192e8;
+        --ibm-cyan-60: #0072c3;
+        --ibm-cyan-70: #00539a;
+        --ibm-cyan-80: #003a6d;
+        --ibm-cyan-90: #012749;
+        --ibm-cyan-100: #061727;
+        
+        /* Teal Family */
+        --ibm-teal-10: #d9fbfb;
+        --ibm-teal-20: #9ef0f0;
+        --ibm-teal-30: #3ddbd9;
+        --ibm-teal-40: #08bdba;
+        --ibm-teal-50: #009d9a;
+        --ibm-teal-60: #007d79;
+        --ibm-teal-70: #005d5d;
+        --ibm-teal-80: #004144;
+        --ibm-teal-90: #022b30;
+        --ibm-teal-100: #081a1c;
+        
+        /* Magenta Family */
+        --ibm-magenta-10: #fff0f7;
+        --ibm-magenta-20: #ffd6e8;
+        --ibm-magenta-30: #ffafd2;
+        --ibm-magenta-40: #ff7eb6;
+        --ibm-magenta-50: #ee5396;
+        --ibm-magenta-60: #d02670;
+        --ibm-magenta-70: #9f1853;
+        --ibm-magenta-80: #740937;
+        --ibm-magenta-90: #510224;
+        --ibm-magenta-100: #2a0a18;
+      }
+      
+      .text-title { 
+        font-family: Arial, sans-serif; 
+        font-size: 20px; 
+        font-weight: bold; 
+        text-anchor: middle;
+      }
+      
+      .text-qm-label { 
+        font-family: Arial, sans-serif; 
+        font-size: 14px; 
+        font-weight: bold; 
+        text-anchor: middle;
+      }
+      
+      .text-legend-title { 
+        font-family: Arial, sans-serif; 
+        font-size: 14px; 
+        font-weight: bold; 
+        text-anchor: middle;
+      }
+      
+      .text-legend-item { 
+        font-family: Arial, sans-serif; 
+        font-size: 12px; 
+      }
+      
+      .text-db-label { 
+        font-family: Arial, sans-serif; 
+        font-size: 12px; 
+        font-weight: bold; 
+        text-anchor: middle;
+      }
+      
+      .text-replication-label { 
+        font-family: Arial, sans-serif; 
+        font-size: 12px; 
+        font-weight: bold; 
+        text-anchor: middle;
+      }
+      
+      .text-arrow-label { 
+        font-family: Arial, sans-serif; 
+        font-size: 10px; 
+      }
+      
+      .qm-box-fill { fill: var(--ibm-blue-20); }
+      .qm-box-stroke { stroke: var(--ibm-blue-60); }
+      .qm-header-fill { fill: var(--ibm-blue-60); }
+      .active-qm-fill { fill: var(--ibm-blue-60); }
+      .replica-qm-fill { fill: var(--ibm-teal-60); }
+      .database-fill { fill: var(--ibm-green-30); }
+      .database-stroke { stroke: var(--ibm-green-60); }
+      .arrow-fill { fill: var(--ibm-gray-70); }
+      .arrow-stroke { stroke: var(--ibm-gray-70); }
+      .replication-arrow { fill: var(--ibm-red-60); stroke: var(--ibm-red-60); }
+      .text-primary { fill: var(--ibm-gray-100); }
+      .text-white { fill: white; }
+      .text-replication { fill: var(--ibm-red-70); }
+      .legend-bg { fill: var(--ibm-gray-10); stroke: var(--ibm-gray-30); }
+    </style>
+
+    <!-- Queue Manager Box Definition -->
+    <g id="queueManagerBox">
+      <!-- Outer rounded rectangle (taller to accommodate internal databases) -->
+      <rect x="0" y="0" width="200" height="200" rx="10" ry="10" 
+        class="qm-box-fill qm-box-stroke" stroke-width="2"/>
+      
+      <!-- Inner box for queue manager type -->
+      <rect x="10" y="10" width="180" height="40" rx="5" ry="5" 
+        class="qm-header-fill" stroke="none"/>
+      
+      <!-- Queue manager label placeholder (will be overridden) -->
+      <text x="100" y="35" class="text-white text-qm-label">
+        Queue Manager
+      </text>
+      
+      <!-- Arrow to logs database (from header to internal position) -->
+      <line x1="60" y1="50" x2="60" y2="90" class="arrow-stroke" stroke-width="2" marker-end="url(#arrowhead)"/>
+      
+      <!-- Arrow to queue files database (from header to internal position) -->
+      <line x1="140" y1="50" x2="140" y2="90" class="arrow-stroke" stroke-width="2" marker-end="url(#arrowhead)"/>
+      
+      <!-- Logs Database (internal, left side for replicas) -->
+      <g transform="translate(35, 100)">
+        <use href="#database"/>
+        <text x="25" y="30" class="text-primary text-db-label">
+          logs
+        </text>
+      </g>
+      
+      <!-- Logs Database (internal, right side for replicas) -->
+      <g transform="translate(115, 100)">
+        <use href="#database"/>
+        <!-- Simple wrapped text with corrected vertical alignment -->
+        <text x="25" y="26" class="text-primary text-db-label">
+          <tspan x="25" dy="0">queue</tspan>
+          <tspan x="25" dy="12">files</tspan>
+        </text>
+      </g>
+      
+      <!-- Pod label at bottom of box -->
+      <text x="100" y="185" class="text-primary text-db-label">
+        Pod
+      </text>
+    </g>
+    
+    <!-- Database Definition -->
+    <g id="database">
+      <!-- Database cylinder shape -->
+      <ellipse cx="25" cy="40" rx="25" ry="8" class="database-fill database-stroke" stroke-width="2"/>
+      <rect x="0" y="0" width="50" height="40" class="database-fill" stroke="none"/>
+      <line x0="0" y1="0" x2="0" y2="40" class="database-stroke" stroke-width="2"/>
+      <line x1="50" y1="0" x2="50" y2="40" class="database-stroke" stroke-width="2"/>
+      <ellipse cx="25" cy="0" rx="25" ry="8" class="database-fill database-stroke" stroke-width="2"/>
+    </g>
+    
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+        refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" class="arrow-fill"/>
+    </marker>
+    
+    <!-- Log replication arrow marker -->
+    <marker id="replicationArrow" markerWidth="10" markerHeight="7" 
+        refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" class="replication-arrow"
+        stroke-width="0"/>
+    </marker>
+  </defs>
+  
+  <!-- Active Queue Manager (left, vertically centered) -->
+  <g transform="translate(100, 150)">
+    <use href="#queueManagerBox"/>
+    <!-- Override the label for active -->
+    <rect x="10" y="10" width="180" height="40" rx="5" ry="5" 
+        class="active-qm-fill" stroke="none"/>
+    <text x="100" y="35" class="text-white text-qm-label">
+      Active Queue Manager
+    </text>
+    
+    <!-- Override databases for reversed layout -->
+    <!-- Queue Files Database (left side) -->
+    <g transform="translate(35, 100)">
+      <use href="#database"/>
+      <!-- Simple wrapped text with corrected vertical alignment -->
+      <text x="25" y="26" class="text-primary text-db-label">
+        <tspan x="25" dy="0">queue</tspan>
+        <tspan x="25" dy="12">files</tspan>
+      </text>
+    </g>
+    
+    <!-- Logs Database (right side) -->
+    <g transform="translate(115, 100)">
+      <use href="#database"/>
+      <text x="25" y="30" class="text-primary text-db-label">
+        logs
+      </text>
+    </g>
+  </g>
+  
+  <!-- Replica Queue Manager 1 (top right) -->
+  <g transform="translate(500, 80)">
+    <use href="#queueManagerBox"/>
+    <!-- Override the label for replica -->
+    <rect x="10" y="10" width="180" height="40" rx="5" ry="5" 
+        class="replica-qm-fill" stroke="none"/>
+    <text x="100" y="35" class="text-white text-qm-label">
+      Replica Queue Manager
+    </text>
+  </g>
+  
+  <!-- Replica Queue Manager 2 (bottom right) -->
+  <g transform="translate(500, 320)">
+    <use href="#queueManagerBox"/>
+    <!-- Override the label for replica -->
+    <rect x="10" y="10" width="180" height="40" rx="5" ry="5" 
+        class="replica-qm-fill" stroke="none"/>
+    <text x="100" y="35" class="text-white text-qm-label">
+      Replica Queue Manager
+    </text>
+  </g>
+  
+  <!-- Log Replication Arrows from Active to Replicas -->
+  <!-- Active to Replica 1 (straight line from active logs to replica 1 logs) -->
+  <line x1="260" y1="276" x2="540" y2="207" class="replication-arrow" stroke-width="3" 
+        stroke-linecap="round" marker-end="url(#replicationArrow)"/>  
+  <!-- Active to Replica 2 (straight line from active logs to replica 2 logs) -->
+  <line x1="260" y1="276" x2="540" y2="441" class="replication-arrow" stroke-width="3" 
+        stroke-linecap="round" marker-end="url(#replicationArrow)"/>
+  <text x="380" y="280" class="text-replication text-replication-label">
+    Log Replication
+  </text>
+</svg>

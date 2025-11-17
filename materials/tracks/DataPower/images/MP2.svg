@@ -1,0 +1,91 @@
+<svg width="700" height="300" xmlns="http://www.w3.org/2000/svg">
+  <!-- IBM Color Palette CSS Styles -->
+  <defs>
+    <style>
+      .background { fill: #f4f4f4; stroke: #e0e0e0; stroke-width: 1; }
+      .title-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 14px; font-weight: 600; fill: #161616; }
+      .protocol-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 11px; font-weight: 500; fill: #ffffff; }
+      .service-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 10px; font-weight: 500; fill: #161616; }
+      .gateway-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #161616; }
+      .annotation-text { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9px; fill: #525252; }
+      
+      /* Connection lines */
+      .connection-line { stroke: #393939; stroke-width: 2; }
+      .dotted-line { stroke: #525252; stroke-width: 1.5; stroke-dasharray: 4,4; }
+      .double-arrow { stroke: #0f62fe; stroke-width: 2; marker-end: url(#arrowhead); }
+      
+      /* Protocol squares - IBM colors */
+      .http-protocol { fill: #0f62fe; stroke: #0043ce; stroke-width: 2; }
+      .https-protocol { fill: #24a148; stroke: #198038; stroke-width: 2; }
+      .mq-protocol { fill: #ff7832; stroke: #eb6200; stroke-width: 2; }
+      
+      /* Gateway box */
+      .gateway-box { fill: #edf5ff; stroke: #393939; stroke-width: 2; }
+      
+      /* Back-end service */
+      .service-tower { fill: #e0e0e0; stroke: #8d8d8d; stroke-width: 2; }
+      .service-screen { fill: #393939; stroke: #161616; stroke-width: 1; }
+      
+      .protocol-box { rx: 4; ry: 4; }
+    </style>
+    
+    <!-- Arrow marker definition -->
+    <marker id="arrowhead" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+      <polygon points="0 0, 6 2.5, 0 5" fill="#0f62fe" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="700" height="300" class="background protocol-box"/>
+  
+  <!-- Title -->
+  <text x="350" y="25" text-anchor="middle" class="title-text">DataPower Multi-Protocol Gateway - Simple Configuration</text>
+  
+  <!-- Main diagram content group - adjust transform to reposition entire diagram -->
+  <g transform="translate(0,0)">
+    <!-- Gateway Box in Middle -->
+    <rect x="175" y="70" width="250" height="160" class="gateway-box"/>
+    <text x="300" y="90" text-anchor="middle" class="gateway-text">Multi-Protocol Gateway</text>
+    
+    <!-- Front-side Protocol Squares (higher z-index by placing after gateway) -->
+    <!-- HTTP -->
+    <rect x="125" y="80" width="80" height="40" class="http-protocol protocol-box"/>
+    <text x="165" y="104" text-anchor="middle" class="protocol-text">HTTP</text>
+    
+    <!-- HTTPS -->
+    <rect x="125" y="130" width="80" height="40" class="https-protocol protocol-box"/>
+    <text x="165" y="154" text-anchor="middle" class="protocol-text">HTTPS</text>
+    
+    <!-- MQ -->
+    <rect x="125" y="180" width="80" height="40" class="mq-protocol protocol-box"/>
+    <text x="165" y="204" text-anchor="middle" class="protocol-text">MQ</text>
+    
+    <!-- Dotted lines inside gateway connecting to single service -->
+    <line x1="205" y1="100" x2="425" y2="150" class="dotted-line"/>
+    <line x1="205" y1="150" x2="425" y2="150" class="dotted-line"/>
+    <line x1="205" y1="200" x2="425" y2="150" class="dotted-line"/>
+    
+    <!-- Arrow to back-end service (starts from connection point) -->
+    <line x1="425" y1="150" x2="495" y2="150" class="double-arrow"/>
+    
+    <!-- Gateway to service connection point (on right edge, higher z-index) -->
+    <circle cx="425" cy="150" r="6" fill="#0f62fe"/>
+    
+    <!-- Back-end Service (Computer Tower) -->
+    <!-- Tower base -->
+    <rect x="495" y="120" width="60" height="60" class="service-tower"/>
+    <!-- Screen -->
+    <rect x="505" y="130" width="40" height="25" class="service-screen"/>
+    <!-- CD/DVD slot -->
+    <rect x="505" y="160" width="30" height="3" class="service-screen"/>
+    <!-- Power button -->
+    <circle cx="545" cy="170" r="3" fill="#24a148"/>
+    
+    <!-- Service label -->
+    <text x="525" y="200" text-anchor="middle" class="service-text">HTTP, HTTPS,</text>
+    <text x="525" y="215" text-anchor="middle" class="service-text">or MQ</text>
+  </g>
+  
+  <!-- Annotations -->
+  <text x="25" y="270" class="annotation-text">Client protocols: HTTP, HTTPS, MQ → Gateway transforms to single back-end service</text>
+</svg>

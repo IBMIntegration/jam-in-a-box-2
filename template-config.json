@@ -1,0 +1,36 @@
+{
+  "templates": {
+    "layout": "default",
+    "theme": "light",
+    "components": {
+      "header": {
+        "title": "Admin Interface",
+        "showNavigation": true
+      },
+      "footer": {
+        "showCopyright": true,
+        "customText": ""
+      }
+    }
+  },
+  "features": {
+    "enableMarkdownPreview": true,
+    "enableFileEditor": true,
+    "enableTemplateEditor": false
+  },
+  "paths": {
+    "templatesDir": "./templates",
+    "assetsDir": "./assets",
+    "outputDir": "./output"
+  },
+  "variables": {
+    "title": "Document",
+    "author": "Your Name",
+    "organization": "Your Organization",
+    "version": "1.0.0",
+    "date": "11/9/2025",
+    "copyright": "© 2025 Your Organization",
+    "description": "A markdown document",
+    "keywords": "markdown, document, template"
+  }
+}
