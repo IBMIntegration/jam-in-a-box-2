@@ -1,6 +1,7 @@
 # Integration Jam-in-a-Box
 
 * [App Connect Enterprise](App%20Connect%20Enterprise/)
+* [DataPower](DataPower/Multi-Protocol%20Gateway.html)
 * [MQ](MQ/)
 
 ## IBM Notices and disclaimers
