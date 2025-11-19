@@ -73,7 +73,7 @@ async function generateConfigObj() {
   out.links.push({ group: 'Start Here' });
 
   // This app
-  host = getResource('Route', 'jb-start-here');
+  host = getResource('Route', 'integration');
   username = getResource('Secret', 'jb-start-here-app-credentials', 'username');
   password = getResource('Secret', 'jb-start-here-app-credentials', 'password');
   out.links.push({

@@ -1,15 +1,30 @@
 #!/bin/bash
 
 GW_NAME="apim-demo-gw"
-NAMESPACE="tools"
+NAMESPACE="jam-in-a-box"
 
-if oc get configmap jb-datapower-config >/dev/null 2>&1; then
-  oc delete configmap jb-datapower-config
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --namespace=*)
+      NAMESPACE="${1#*=}"
+      shift
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if oc get configmap jb-datapower-config -n "${NAMESPACE}" >/dev/null 2>&1; then
+  oc delete configmap jb-datapower-config -n "${NAMESPACE}"
 fi
-oc create configmap jb-datapower-config \
+oc create configmap jb-datapower-config -n "${NAMESPACE}" \
   "--from-file=dpApp.cfg=$(dirname "$0")/jb-datapower-dpApp.cfg"
 
-oc patch APIConnectCluster apim-demo --namespace="$NAMESPACE" --type='json' \
+# Note: APIConnectCluster is always in tools namespace where CloudPak is installed
+oc patch APIConnectCluster apim-demo --namespace="tools" --type='json' \
   -p='[
     {
       "op":"add",
