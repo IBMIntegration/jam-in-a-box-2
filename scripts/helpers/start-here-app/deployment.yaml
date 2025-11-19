@@ -299,7 +299,7 @@ spec:
         - name: materials-volume
           mountPath: /materials
         - name: md-handler-config
-          mountPath: /app/config
+          mountPath: /opt/app-root/src/config
         livenessProbe:
           httpGet:
             path: /health
@@ -319,7 +319,7 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        workingDir: /app
+        workingDir: /opt/app-root/src
       volumes:
       - name: materials-volume
         emptyDir: {}
@@ -387,7 +387,7 @@ spec:
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: {{NAME}}
+  name: {{ROUTE_BASENAME}}
   namespace: {{NAMESPACE}}
   labels:
     app: {{LABEL_APP}}

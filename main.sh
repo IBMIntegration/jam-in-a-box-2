@@ -2,7 +2,7 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NAMESPACE="tools"
+JAM_NAMESPACE="jam-in-a-box"
 
 startHereParams=();
 quickMode=false;
@@ -62,6 +62,16 @@ if ! oc whoami &> /dev/null; then
 fi
 log_info "OpenShift login verified"
 
+# Ensure jam-in-a-box namespace exists
+log_info "Ensuring jam-in-a-box namespace exists..."
+if ! oc get namespace "${JAM_NAMESPACE}" &> /dev/null; then
+  log_info "Creating jam-in-a-box namespace..."
+  oc create namespace "${JAM_NAMESPACE}"
+  log_success "Created namespace: ${JAM_NAMESPACE}"
+else
+  log_info "Namespace ${JAM_NAMESPACE} already exists"
+fi
+
 if ! $hasAllNecessaryTools; then
   log_error "Cannot continue without all necessary tools."
   exit 1
@@ -69,8 +79,8 @@ fi
 log_info "Tool check completed successfully"
 
 log_info "Cleaning up previous output files if they exist..."
-oc -n "${NAMESPACE}" delete configmap jb-setup-output --ignore-not-found
-oc -n "${NAMESPACE}" delete secret jb-setup-secrets --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete configmap jb-setup-output --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete secret jb-setup-secrets --ignore-not-found
 
 ##
 # Reduce the size of the oc output by filtering out information that is
@@ -211,8 +221,8 @@ else
   fi
 fi
 
-"${SCRIPT_DIR}/scripts/datapower/jb-datapower.sh"
-getInfoByLabel route tools jb-purpose=datapower-console
+"${SCRIPT_DIR}/scripts/datapower/jb-datapower.sh" --namespace="${JAM_NAMESPACE}"
+getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 
 # log_info "Creating Gatsby app resources..."
 # "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \
@@ -220,7 +230,7 @@ getInfoByLabel route tools jb-purpose=datapower-console
 
 log_info "Creating Start Here app resources..."
 "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
-  --namespace="$NAMESPACE" \
+  --namespace="$JAM_NAMESPACE" \
   "${startHereParams[@]}"
 
 log_info "Gathering OpenShift resource information..."
@@ -240,8 +250,8 @@ getInfo secret tools apim-demo-mgmt-admin-pass
 getInfo route tools apim-demo-mgmt-api-manager
 getInfo secret tools apim-demo-mgmt-admin-pass
 
-getInfo route tools jb-start-here
-getInfo secret tools jb-start-here-app-credentials
+getInfo route "${JAM_NAMESPACE}" integration
+getInfo secret "${JAM_NAMESPACE}" jb-start-here-app-credentials
 
 log_info "Finalizing output files..."
 endFile "$output_file"
@@ -268,9 +278,9 @@ fi
 
 log_info "Creating ConfigMap and Secret for output files..."
 
-oc -n "${NAMESPACE}" create configmap jb-setup-output \
+oc -n "${JAM_NAMESPACE}" create configmap jb-setup-output \
   --from-file=setup.json="$output_file"
-oc -n "${NAMESPACE}" create secret generic jb-setup-secrets \
+oc -n "${JAM_NAMESPACE}" create secret generic jb-setup-secrets \
   --from-file=secret.json="$secret_file"
 
 log_info "Creating report..."

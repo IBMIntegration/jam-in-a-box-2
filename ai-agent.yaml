@@ -24,6 +24,10 @@ coding standards:
     - we're targeting a very specific OpenShift environment with Cloud Pak for
       Integration installed. We do not need to support vanilla Kubernetes.
 
+documentation:
+  - keep the documentation high level. All parameters should be documented
+    unless they are only used for debugging, but don't repeat the code.
+
 environment:
   - the scripts run in any namespace but operate on the `tools` or
     `jam-in-a-box` namespace

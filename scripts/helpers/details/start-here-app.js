@@ -6,13 +6,13 @@ export default function startHereApp(config) {
   const route = searchDetail(
     config,
     'Route',
-    'tools',
-    'jb-start-here'
+    'jam-in-a-box',
+    'integration'
   );
   const secret = searchDetail(
     config,
     'Secret',
-    'tools',
+    'jam-in-a-box',
     'jb-start-here-app-credentials'
   );
   return {

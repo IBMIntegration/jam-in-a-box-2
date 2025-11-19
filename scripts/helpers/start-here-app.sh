@@ -6,9 +6,10 @@
 
 LABEL_APP="jb-start-here"
 LABEL="app=${LABEL_APP}"
-NAMESPACE="tools"
+NAMESPACE="jam-in-a-box"
 GIT_BRANCH="main"
 LAST_BUILD_NAME=""
+ROUTE_BASENAME="integration"
 
 ## 
 # This is a one-touch deployment script for a jam-in-a-box educational
@@ -1012,6 +1013,7 @@ function applyMainDeployment() {
   output=$(sed -e "s/{{NAME}}/$NAME/g" \
       -e "s/{{NAMESPACE}}/$NAMESPACE/g" \
       -e "s/{{USERNAME}}/$USERNAME/g" \
+      -e "s/{{ROUTE_BASENAME}}/$ROUTE_BASENAME/g" \
       -e "s/{{USERNAME_BASE64}}/$USERNAME_BASE64/g" \
       -e "s/{{PASSWORD}}/$PASSWORD/g" \
       -e "s/{{PASSWORD_BASE64}}/$PASSWORD_BASE64/g" \
