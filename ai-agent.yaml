@@ -1,0 +1,54 @@
+---
+coding standards:
+
+  all:
+    - arrange functions and variables in alphabetical order when possible.
+    - keep lines under 80 columns when possible.
+
+  bash:
+    - global variables are in ALL_CAPS_WITH_UNDERSCORES when they are intended
+      to be configuration parameters, or
+      provided as environment variables, and lowerCamelCase when calculated.
+    - ensure all local variables are declared with 'local' keyword at the
+      beginning of functions. Hoist them when possible.
+    - all code needs to work on both macOS bash 3.2 and Linux bash 4.x. If a
+      command works differently between the two platforms, create a helper
+      function to encapsulate the differences.
+    - avoid putting yamls into here documents. Use separate yaml files when
+      possible. The yamls can have code substitutions in the form
+      `{{ VARIABLE }}`.
+
+  kubernetes / OpenShift:
+    - the namespace must always be explicitly specified. The current context
+      will not be in the correct namespace.
+    - we're targeting a very specific OpenShift environment with Cloud Pak for
+      Integration installed. We do not need to support vanilla Kubernetes.
+
+environment:
+  - the scripts run in any namespace but operate on the `tools` or
+    `jam-in-a-box` namespace
+
+git hooks:
+  - when modifying `scripts/archive-materials.sh` or `scripts/setup-hooks.sh`,
+    always run `./scripts/setup-hooks.sh --force` to reinstall the pre-commit
+    hook with the updated code.
+  - the pre-commit hook archives the materials folder when it changes and
+    includes the archive in the commit.
+
+rules of engagement:
+  - do not change the overall structure of the code, unless explicitly
+    requested, or without asking first.
+  - questions are questions. Do not act on inferred intent. Just answer the
+    question.
+  - I will ask you to reread the rules of engagement from time to time. You do
+    not need to summarize them after the first reading, just acknowledge.
+  - Feel free to add your own reminders to the `z ai space` section of this file
+    but never other sections. Only add things you wouldn't normally know. For
+    example, you already know common coding standards, so don't add those here,
+    but I might have an additional standard that is not so common.
+
+testing:
+  - test with this command line:
+      ./main.sh --clean --start-here-app-password=jam
+
+z ai space: []

@@ -4,18 +4,28 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAMESPACE="tools"
 
-startHereAppPassword='';
+startHereParams=();
 quickMode=false;
 for arg in "$@"; do
   case $arg in
+    --canary*)
+      startHereParams+=("${arg}")
+      shift
+      ;;
+    --clean*)
+      startHereParams+=("${arg}")
+      shift
+      ;;
     --start-here-app-password=*)
-      startHereAppPassword="${arg#*=}"
+      startHereParams+=("--password=${arg#*=}")
       shift
       ;;
     --quick)
+      startHereParams+=("--quick")
       quickMode=true
       shift
       ;;
+
   esac
 done
 
@@ -209,27 +219,9 @@ getInfoByLabel route tools jb-purpose=datapower-console
 #   --namespace="$NAMESPACE"
 
 log_info "Creating Start Here app resources..."
-if [ -n "$startHereAppPassword" ]; then
-  if [ "$quickMode" = true ]; then
-    "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
-      --namespace="$NAMESPACE" \
-      --password="$startHereAppPassword" \
-      --quick
-  else
-    "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
-      --namespace="$NAMESPACE" \
-      --password="$startHereAppPassword"
-  fi
-else
-  if [ "$quickMode" = true ]; then
-    "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
-      --namespace="$NAMESPACE" \
-      --quick
-  else
-    "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
-      --namespace="$NAMESPACE"
-  fi
-fi
+"${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
+  --namespace="$NAMESPACE" \
+  "${startHereParams[@]}"
 
 log_info "Gathering OpenShift resource information..."
 

@@ -228,6 +228,10 @@ metadata:
   labels:
     app: {{LABEL_APP}}
     component: md-handler
+  annotations:
+    # Enable automatic updates when ImageStream changes
+    image.openshift.io/triggers: |
+      [{"from":{"kind":"ImageStreamTag","name":"md-handler:latest"},"fieldPath":"spec.template.spec.containers[0].image"}]
 spec:
   replicas: 1
   selector:
@@ -240,20 +244,41 @@ spec:
         app: {{LABEL_APP}}
         component: md-handler
     spec:
+      initContainers:
+      - name: fetch-materials
+        image: alpine/git:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Fetching materials from git repository..."
+          git clone --depth 1 --branch {{GIT_BRANCH}} https://github.com/capnajax/integration-jam-in-a-box.git /tmp/repo
+          echo "Copying materials to shared volume..."
+          if [ -d "/tmp/repo/materials" ]; then
+            cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
+            echo "Materials copied successfully"
+            ls -la /shared-materials/
+          else
+            echo "No materials directory found"
+          fi
+          # Also copy any other needed files from the repo
+          if [ -d "/tmp/repo/gatsby-site" ]; then
+            cp -r /tmp/repo/gatsby-site /shared-materials/ 2>/dev/null || echo "No gatsby-site to copy"
+          fi
+          echo "Init container completed"
+        volumeMounts:
+        - name: materials-volume
+          mountPath: /shared-materials
       containers:
       - name: md-handler
-        image: registry.redhat.io/ubi8/nodejs-20:latest
+        image: md-handler:latest
         ports:
         - containerPort: 8081
           name: http
         - containerPort: 8082
           name: admin
-        command: ["/bin/sh", "/scripts/start-md-handler.sh"]
         env:
         - name: NODE_ENV
           value: "production"
-        - name: npm_config_cache
-          value: "/app/.npm"
         - name: PORT
           value: "8081"
         - name: BASE_PATH
@@ -265,30 +290,34 @@ spec:
         - name: ADMIN_HOST
           value: "0.0.0.0"
         volumeMounts:
-        - name: md-handler-app
-          mountPath: /app-config
-        - name: md-handler-scripts
-          mountPath: /scripts
         - name: materials-volume
           mountPath: /materials
-        - name: md-handler-workspace
-          mountPath: /app
         - name: md-handler-config
           mountPath: /app/config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
         workingDir: /app
       volumes:
       - name: materials-volume
         persistentVolumeClaim:
           claimName: {{NAME}}-materials-pvc
-      - name: md-handler-app
-        configMap:
-          name: {{NAME}}-md-handler-app
-      - name: md-handler-scripts
-        configMap:
-          name: {{NAME}}-md-handler-scripts
-          defaultMode: 0755
-      - name: md-handler-workspace
-        emptyDir: {}
       - name: md-handler-config
         configMap:
           name: {{NAME}}-md-handler-config
