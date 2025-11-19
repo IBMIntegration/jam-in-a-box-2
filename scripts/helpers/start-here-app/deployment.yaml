@@ -246,23 +246,29 @@ spec:
     spec:
       initContainers:
       - name: fetch-materials
-        image: alpine/git:latest
+        image: alpine:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
-          echo "Fetching materials from git repository..."
-          git clone --depth 1 --branch {{GIT_BRANCH}} https://github.com/capnajax/integration-jam-in-a-box.git /tmp/repo
-          echo "Copying materials to shared volume..."
-          if [ -d "/tmp/repo/materials" ]; then
-            cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
-            echo "Materials copied successfully"
+          echo "Installing required tools..."
+          apk add --no-cache curl tar
+          echo "Downloading materials archive from git repository..."
+          ARCHIVE_URL="https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/{{GIT_BRANCH}}/archives/materials.tar.gz"
+          echo "Fetching archive from: ${ARCHIVE_URL}"
+          if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}"; then
+                  echo "Archive downloaded successfully"
+            echo "Extracting materials to shared volume..."
+            cd /shared-materials
+            tar -xzf /tmp/materials.tar.gz --strip-components=1
+            echo "Materials extracted successfully"
             ls -la /shared-materials/
           else
-            echo "No materials directory found"
-          fi
-          # Also copy any other needed files from the repo
-          if [ -d "/tmp/repo/gatsby-site" ]; then
-            cp -r /tmp/repo/gatsby-site /shared-materials/ 2>/dev/null || echo "No gatsby-site to copy"
+            echo "Failed to download materials archive"
+            echo "Falling back to downloading individual files..."
+            mkdir -p /shared-materials/tracks
+            # Create a basic index if archive is not available
+            echo "# Materials" > /shared-materials/tracks/index.md
+            echo "Materials archive not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
           fi
           echo "Init container completed"
         volumeMounts:
@@ -316,8 +322,7 @@ spec:
         workingDir: /app
       volumes:
       - name: materials-volume
-        persistentVolumeClaim:
-          claimName: {{NAME}}-materials-pvc
+        emptyDir: {}
       - name: md-handler-config
         configMap:
           name: {{NAME}}-md-handler-config

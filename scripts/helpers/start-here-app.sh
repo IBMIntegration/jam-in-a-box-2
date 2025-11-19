@@ -1105,7 +1105,7 @@ function displayAccessInformation() {
   echo ""
 }
 
-function setupNGinX() {
+function setupStartHereApp() {
   log_header "Starting Setup of Start Here Application"
   
   log_debug "Configuration - Password set: ${startHereAppPassword:+yes}"
@@ -1136,7 +1136,7 @@ function setupNGinX() {
 # =============================================================================
 
 cleanup
-setupNGinX
+setupStartHereApp
 
 # =============================================================================
 # Final Error Reporting
