@@ -25,6 +25,17 @@ data:
         root /usr/share/nginx/html;
         index index.html;
         
+        # Enable Server Side Includes for HTML files
+        ssi on;
+        ssi_silent_errors off;
+        ssi_types text/shtml;
+        
+        # Handle HTML files with SSI enabled
+        location ~ \.html$ {
+          ssi on;
+          auth_basic "Restricted Area";
+        }
+        
         # Disable script execution
         location ~* \.(php|pl|py|jsp|asp|sh|cgi)$ {
           return 403;
