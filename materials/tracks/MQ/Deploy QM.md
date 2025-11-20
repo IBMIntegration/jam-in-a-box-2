@@ -42,16 +42,16 @@ Please ensure you have the `oc` command line installed and logged in ([see prere
     Ensure that the namespace of that project has a pull secret named `ibm-entitlement-key`. On the TechZone jam-in-a-box machines, you may copy this secret from the `tools` namespace.
 
     ```sh
-    kubectl get secret ibm-entitlement-key -n tools -o yaml | \
+    oc get secret ibm-entitlement-key -n tools -o yaml | \
       sed 's/namespace: tools/namespace: {{mqLabNamespace | mq-lab }}/' | \
-      kubectl apply -f -
+      oc apply -f -
     ```
 
 1. Create a TLS secret. You will need this later.
 
     ```sh
     openssl req -x509 -newkey rsa:2048 -keyout tls.key -out tls.crt -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=mq-lab" && \
-    kubectl create secret tls mq-lab-tls-secret --key=tls.key --cert=tls.crt && \
+    oc create secret tls mq-lab-tls-secret --key=tls.key --cert=tls.crt && \
     rm tls.key tls.crt
     ```
 

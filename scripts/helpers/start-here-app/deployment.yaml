@@ -65,7 +65,7 @@ data:
           try_files $uri $uri/ /404.html;
 
           location /tracks {
-            proxy_pass http://{{NAME}}-md-handler.{{NAMESPACE}}.svc.cluster.local:8081;
+            proxy_pass http://localhost:8081;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -225,7 +225,8 @@ spec:
         - name: rest-proxy-script
           mountPath: /app
       - name: md-handler
-        image: md-handler:latest
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/md-handler:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8081
           name: http
