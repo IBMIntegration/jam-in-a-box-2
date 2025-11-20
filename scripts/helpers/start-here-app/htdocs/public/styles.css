@@ -1,4 +1,10 @@
 
+:host(cds-header) {
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+
+
 :root {
   --main-bg-color: #ffffff;
   --section-bg-color: #f2f4f8;

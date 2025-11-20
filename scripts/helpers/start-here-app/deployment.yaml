@@ -311,6 +311,9 @@ spec:
           mountPath: /materials
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
+        - name: html-content
+          mountPath: /shared-includes
+          readOnly: true
         livenessProbe:
           httpGet:
             path: /health

@@ -5,65 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Integration Jam-in-a-box</title>
   <!--#include file="includes/head.html" -->
+  <script>
+    window.loadCarbonComponents(['tile']);
+  </script>
 </head>
 <body>
 <!--#include file="includes/header.html" -->
-    <div class="left-panel">
-      <div class="form-section" id="host-selector">
-        <h2>Request</h2>
-        <label for="host">Host:</label>
-        <h3>Method and path</h3>
-        <div class="field-wrapper">
-          <label for="method">Method:</label>
-          <select name="method" title="method">
-            <option name="CONNECT">CONNECT</option>
-            <option name="DELETE">DELETE</option>
-            <option name="GET" class="highlight">GET</option>
-            <option name="HEAD">HEAD</option>  
-            <option name="OPTIONS">OPTIONS</option>
-            <option name="PATCH">PATCH</option>  
-            <option name="POST" selected class="highlight">POST</option>
-            <option name="PUT" class="highlight">PUT</option>  
-            <option name="TRACE">TRACE</option>  
-          </select>
+  <cds-grid class="main-content">
+    <cds-column md="4">
+      <cds-tile>
+        <h3>Lab materials</h3>
+
+        <ul></ul>
+          <li><a href="tracks/App%20Connect%20Enterprise/">App Connect Enterprise</a></li>
+          <li><a href="tracks/DataPower/Multi-Protocol%20Gateway.html">DataPower</a></li>
+          <li><a href="tracks/MQ/">MQ</a></li>
+        </ul>
+
+      </cds-tile>
+    </cds-column>
+    <cds-column md="4">
+      <cds-tile>
+        <div class="links">
+          <div class="link-groups"></div>
         </div>
-        <div class="field-wrapper">
-          <label for="method">Path:</label>
-          <input
-            title="path" type="text" name="path" label="path"
-            placeholder="/path/to/resource"
-          />
+      </cds-tile>
+    </cds-column>
+    <cds-column md="8" id="rest-client">
+      <cds-tile>
+        <div class="form-section" id="host-selector">
+          <h2>Request</h2>
+          <label for="host">Host:</label>
+          <h3>Method and path</h3>
+          <div class="field-wrapper">
+            <label for="method">Method:</label>
+            <select name="method" title="method">
+              <option name="CONNECT">CONNECT</option>
+              <option name="DELETE">DELETE</option>
+              <option name="GET" class="highlight">GET</option>
+              <option name="HEAD">HEAD</option>  
+              <option name="OPTIONS">OPTIONS</option>
+              <option name="PATCH">PATCH</option>  
+              <option name="POST" selected class="highlight">POST</option>
+              <option name="PUT" class="highlight">PUT</option>  
+              <option name="TRACE">TRACE</option>  
+            </select>
+          </div>
+          <div class="field-wrapper">
+            <label for="method">Path:</label>
+            <input
+              title="path" type="text" name="path" label="path"
+              placeholder="/path/to/resource"
+            />
+          </div>
         </div>
-      </div>
-      <div class="form-section" id="request-headers">
-        <h3>Headers</h3>
-        <div class="field-wrapper">
-          <label for="contentType">Content-Type</label>
-          <select name="contentType" title="contentType">
-            <option name="application/json">application/json</option>
-            <option name="application/xml charset=utf-8" selected>application/xml charset=utf-8</option>
-            <option name="text/plain">text/plain</option>
-          </select>
+        <div class="form-section" id="request-headers">
+          <h3>Headers</h3>
+          <div class="field-wrapper">
+            <label for="contentType">Content-Type</label>
+            <select name="contentType" title="contentType">
+              <option name="application/json">application/json</option>
+              <option name="application/xml charset=utf-8" selected>application/xml charset=utf-8</option>
+              <option name="text/plain">text/plain</option>
+            </select>
+          </div>
+          <div class="additional-headers"></div>
+          <button class="major" name="add-header">Add header</button>
         </div>
-        <div class="additional-headers"></div>
-        <button class="major" name="add-header">Add header</button>
-      </div>
-      <div class="form-section" id="request-body">
-        <label for="body-content">Body content</label>
-        <textarea name="body-content" title="content"></textarea>
-      </div>
-      <div class="form-section" id="send">
-        <button class="major" type="button" name="send">Send</button>
-      </div>
-      <div class="response-section" id="response-headers"></div>
-      <div class="response-section" id="response-body"></div>
-    </div>
-    <div class="right-panel">
-      <div class="links">
-        <h2>Links</h2>
-        <div class="link-groups"></div>
-      </div>
-    </div>
+        <div class="form-section" id="request-body">
+          <label for="body-content">Body content</label>
+          <textarea name="body-content" title="content"></textarea>
+        </div>
+        <div class="form-section" id="send">
+          <button class="major" type="button" name="send">Send</button>
+        </div>
+        <div class="response-section" id="response-headers"></div>
+        <div class="response-section" id="response-body"></div>
+      </cds-tile>
+    </cds-column>
+  </cds-grid>
 <!--#include file="includes/footer.html" -->
 </body>
 </html>
