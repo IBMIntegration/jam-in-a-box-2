@@ -1,0 +1,176 @@
+---
+# Integration Jam-in-a-Box One-Line Setup
+# Usage: oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+#
+# This will:
+# 1. Create necessary namespaces
+# 2. Set up privileged service account
+# 3. Clone the repository
+# 4. Run main.sh to set up the entire environment
+#
+# Optional: Create a ConfigMap named 'jam-setup-params' in the current namespace 
+# to customize parameters. Example:
+#   oc create configmap jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary"
+
+# Create jam-in-a-box namespace if it doesn't exist
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jam-in-a-box
+---
+# ServiceAccount with cluster admin privileges for setup
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jam-setup-sa
+  namespace: tools
+---
+# ClusterRoleBinding to give the service account cluster-admin privileges
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jam-setup-cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: jam-setup-sa
+  namespace: tools
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Main setup pod with init container for git clone
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jam-setup-pod
+  namespace: tools
+  labels:
+    app: jam-setup
+spec:
+  serviceAccount: jam-setup-sa
+  restartPolicy: Never
+  
+  # Shared volume for git repository
+  volumes:
+  - name: repo-volume
+    emptyDir: {}
+  
+  # Init container to clone the repository
+  initContainers:
+  - name: git-clone
+    image: registry.redhat.io/ubi8/ubi:latest
+    workingDir: /workspace
+    volumeMounts:
+    - name: repo-volume
+      mountPath: /workspace
+    command: ["/bin/bash", "-c"]
+    args:
+    - |
+      echo "=== Integration Jam-in-a-Box Setup - Git Clone Phase ==="
+      echo "Installing git..."
+      dnf install -y git
+      
+      echo "Cloning repository..."
+      git clone https://github.com/capnajax/integration-jam-in-a-box.git .
+      
+      echo "Repository cloned successfully. Contents:"
+      ls -la
+      
+      echo "Git clone phase complete."
+  
+  # Main container to run setup
+  containers:
+  - name: jam-setup
+    image: registry.redhat.io/ubi8/ubi:latest
+    workingDir: /workspace
+    volumeMounts:
+    - name: repo-volume
+      mountPath: /workspace
+    
+    # Set up environment
+    env:
+    - name: HOME
+      value: "/tmp"
+    
+    command: ["/bin/bash", "-c"]
+    args:
+    - |
+      echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
+      
+      # Install required tools
+      echo "Installing required tools..."
+      dnf install -y openssl curl tar gzip findutils procps-ng
+      
+      # Download and install oc client
+      echo "Installing OpenShift CLI..."
+      curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz | tar -xzf - -C /usr/local/bin/ oc
+      chmod +x /usr/local/bin/oc
+      
+      # Make scripts executable
+      echo "Setting up permissions..."
+      find . -name "*.sh" -exec chmod +x {} \;
+      chmod +x main.sh
+      
+      # Check for optional parameters ConfigMap
+      echo "Checking for custom parameters..."
+      PARAMETERS=""
+      if oc get configmap jam-setup-params -n tools 2>/dev/null; then
+        echo "Found custom parameters ConfigMap"
+        PARAMETERS=$(oc get configmap jam-setup-params -n tools -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+      else
+        echo "No custom parameters found, using defaults"
+      fi
+      
+      echo "Parameters to use: ${PARAMETERS:-'(none)'}"
+      
+      # Run the main setup script
+      echo "Starting main setup process..."
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la
+      
+      if [ -f "./main.sh" ]; then
+        echo "Executing: ./main.sh ${PARAMETERS}"
+        ./main.sh ${PARAMETERS}
+        SETUP_EXIT_CODE=$?
+        
+        if [ $SETUP_EXIT_CODE -eq 0 ]; then
+          echo "=== Setup completed successfully! ==="
+        else
+          echo "=== Setup failed with exit code: $SETUP_EXIT_CODE ==="
+        fi
+      else
+        echo "ERROR: main.sh not found in cloned repository"
+        ls -la
+        exit 1
+      fi
+      
+      # Keep container running for debugging/testing
+      echo "Setup phase complete. Container will remain running for inspection."
+      echo "You can exec into this pod to test changes or debug issues:"
+      echo "  oc exec -it jam-setup-pod -n tools -- /bin/bash"
+      echo ""
+      echo "To clean up when done:"
+      echo "  oc delete pod jam-setup-pod -n tools"
+      echo "  oc delete clusterrolebinding jam-setup-cluster-admin"
+      echo "  oc delete serviceaccount jam-setup-sa -n tools"
+      
+      # Sleep to keep container alive
+      while true; do
+        sleep 3600
+      done
+    
+    # Security context for privileged operations
+    securityContext:
+      privileged: true
+      runAsUser: 0
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"

@@ -173,7 +173,7 @@ spec:
           echo "Installing required tools..."
           apk add --no-cache curl tar
           echo "Downloading materials archive from git repository..."
-          ARCHIVE_URL="https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/{{GIT_BRANCH}}/archives/materials.tar.gz"
+          ARCHIVE_URL="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}/archives/materials.tar.gz"
           echo "Fetching archive from: ${ARCHIVE_URL}"
           if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}"; then
                   echo "Archive downloaded successfully"

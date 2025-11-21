@@ -18,7 +18,7 @@ spec:
   source:
     type: Git
     git:
-      uri: https://github.com/capnajax/integration-jam-in-a-box.git
+      uri: {{REPO_GIT_URL}}
       ref: "{{GIT_BRANCH}}"  # Parameterized branch reference
     contextDir: scripts/helpers/md-handler
   strategy:

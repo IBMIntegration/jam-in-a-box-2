@@ -71,3 +71,12 @@
 1. Download and install the Jam-in-a-Box tooling and materials.
 
     TODOC
+
+    ```sh
+    # Basic usage (no parameters)
+    oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+
+    # With custom parameters
+    oc create configmap jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary" -n tools
+    oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+    ```

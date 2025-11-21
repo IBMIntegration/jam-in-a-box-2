@@ -10,6 +10,7 @@ coding standards:
   all:
     - arrange functions and variables in alphabetical order when possible.
     - keep lines under 80 columns when possible.
+    - use two-space tabs for indentation.
 
   bash:
     - global variables are in ALL_CAPS_WITH_UNDERSCORES when they are intended
