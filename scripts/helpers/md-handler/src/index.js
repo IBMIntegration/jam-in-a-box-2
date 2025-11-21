@@ -9,9 +9,6 @@ import { resolveFile } from './file-handler.js';
 import { AdminServer, AdminConfig } from './admin.js';
 import { ConfigReader } from './config-reader.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 /**
  * Main server configuration using the shared ConfigReader
  */

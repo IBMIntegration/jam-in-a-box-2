@@ -1,6 +1,20 @@
 
-.cds--header {
-  border-bottom: 1px solid var(--cds-border-subtle);
+cds-header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.hero {
+  margin-top: 3rem;
+  height: 3rem;
+  .hero-content {
+    height: calc(100% + 12rem);
+    background-image: url('./hero.svg');
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-image: linear-gradient(to bottom, white 0%, transparent 2rem, white 100%), url('./hero.svg');
+    filter: blur(1px);
+  }
 }
 
 :root {
@@ -20,67 +34,28 @@
 body {
   font-size: 10pt;
   font-family: IBM Plex Sans, Helvetica, Arial, sans-serif;
-  padding: 1rem;
+  margin: 0;
 }
 
 cds-tile {
   background-color: var(--section-bg-color);
   margin: 1rem;
   padding: 1rem;
+  ul {
+    list-style: none;
+    padding-inline-start: 0;
+    li {
+      margin-bottom: 0.32rem;
+    }
+  }
 }
 
 cds-tile#lab-materials {
   background-color: #d0e2ff;
 }
 
-
-.rest-client {
-  div.form-section:empty,
-  div.response-section:empty {
-    display: none;
-  }
-
-  div.form-section,
-  div.response-section {
-    margin: 0.5rem auto;
-  }
-
-  div.links {
-    position: relative;
-    margin: 0.5rem auto;
-  }
-  h1 {
-    margin: 0.5rem auto;
-    position: relative;
-    padding: 1rem 0;
-  }
-
-  .form-section,
-  .form-section .field-wrapper {
-    label {
-      display: inline-block;
-      width: 36%;
-    }
-    select, input {
-      width: 60%;
-    }
-  }
-}
-
-div.form-section,
-div.response-section,
-div.links {
-  padding: 0.5rem 1rem;
-  .link-groups {
-    ul {
-      list-style: none;
-      padding-inline-start: 0;
-      li {
-        margin-bottom: 0.32rem;
-      }
-    }
-  }
-  .more-info {
+cds-tile#services-tile {
+  .link-groups ul li .more-info {
     font-size: 0.75em;
     position: relative;
     margin-top: 0.25em;    
@@ -112,6 +87,53 @@ div.links {
     }
     .italic {
       font-style: italic;
+    }
+  }
+}
+
+/* .rest-client {
+  div.form-section:empty,
+  div.response-section:empty {
+    display: none;
+  }
+
+  div.form-section,
+  div.response-section {
+    margin: 0.5rem auto;
+  }
+
+  div.links {
+    position: relative;
+    margin: 0.5rem auto;
+  }
+  h1 {
+    margin: 0.5rem auto;
+    position: relative;
+    padding: 1rem 0;
+  }
+
+  .form-section,
+  .form-section .field-wrapper {
+    label {
+      display: inline-block;
+      width: 36%;
+    }
+    select, input {
+      width: 60%;
+    }
+  }
+} */
+
+/* div.form-section,
+div.response-section,
+div.links {
+  .link-groups {
+    ul {
+      list-style: none;
+      padding-inline-start: 0;
+      li {
+        margin-bottom: 0.32rem;
+      }
     }
   }
 
@@ -195,5 +217,5 @@ div.links {
     font-weight: bold;
   }
 }
-
+ */
 

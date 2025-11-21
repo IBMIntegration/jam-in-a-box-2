@@ -2,9 +2,29 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import MarkdownIt from 'markdown-it';
-import { type } from 'os';
 // TOC plugin for automatic table of contents
 import markdownItTocDoneRight from 'markdown-it-toc-done-right';
+
+const INCLUDES_DIR = path.join('shared-includes', 'includes');
+const INCLUDES = ['header', 'footer', 'head'];
+
+/**
+ * Reads a file from the include directory
+ * @param {string} filename the name of the file without the `.html` extension
+ * @returns {Promise<string>} the content of the include file
+ */
+async function includeHtml(filename) {
+  if (!INCLUDES.includes(filename)) {
+    throw new Error(`Include file "${filename}" is not recognized.`);
+  }
+  const filePath = path.join(INCLUDES_DIR, filename+'.html');
+  try {
+    return await fs.readFile(filePath, 'utf-8');
+  } catch (error) {
+    throw new Error(`Failed to read include file "${filename}": ${error.message}`);
+  }
+}
+
 
 // Initialize markdown-it with default options
 const md = new MarkdownIt({
@@ -295,7 +315,7 @@ export async function resolveFile(requestPath, basePath) {
             const markdownContent = await fs.readFile(markdownPath, 'utf8');
             // Process template variables before converting to HTML
             const processedMarkdown = parseTemplateVariables(markdownContent);
-            const htmlContent = convertMarkdownToHtml(processedMarkdown, path.basename(markdownPath, '.md'));
+            const htmlContent = awaitconvertMarkdownToHtml(processedMarkdown, path.basename(markdownPath, '.md'));
             
             return {
               status: 200,
@@ -335,12 +355,24 @@ export async function resolveFile(requestPath, basePath) {
  * @param {string} title - The title for the HTML page
  * @returns {string} Complete HTML document
  */
-function convertMarkdownToHtml(markdownContent, title = 'Document') {
+async function convertMarkdownToHtml(markdownContent, title = 'Document') {
   const htmlBody = md.render(markdownContent);
   
+  // load these in parallel
+  const neededIncludesPromises = {
+    head: includeHtml('head'),
+    header: includeHtml('header'),
+    footer: includeHtml('footer')
+  };
+
+  console.log('HEAD:', await neededIncludesPromises.head);
+  console.log('HEADER:', await neededIncludesPromises.header);
+  console.log('FOOTER:', await neededIncludesPromises.footer);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
+    ${await neededIncludesPromises.head}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
@@ -512,6 +544,7 @@ function convertMarkdownToHtml(markdownContent, title = 'Document') {
             crossorigin="anonymous"></script>
 </head>
 <body>
+    ${await neededIncludesPromises.header}
     ${htmlBody}
     
     <!-- Image modal for lightbox -->
@@ -592,6 +625,7 @@ function convertMarkdownToHtml(markdownContent, title = 'Document') {
             $('body').css('overflow', '');
         }
     </script>
+    ${await neededIncludesPromises.footer}
 </body>
 </html>`;
 }
