@@ -5,7 +5,7 @@ import MarkdownIt from 'markdown-it';
 // TOC plugin for automatic table of contents
 import markdownItTocDoneRight from 'markdown-it-toc-done-right';
 
-const INCLUDES_DIR = path.join('shared-includes', 'includes');
+const INCLUDES_DIR = path.join('/shared-includes', 'includes');
 const INCLUDES = ['header', 'footer', 'head'];
 
 /**
