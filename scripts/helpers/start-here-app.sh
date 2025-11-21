@@ -938,27 +938,7 @@ function createRestProxyConfigMap() {
     oc apply -f -
 }
 
-function createHtdocsConfigMap() {
-  local NAME="$1"
-  local htdocsDir baseDir
-  
-  baseDir="$(dirname "$0")/start-here-app"
-  htdocsDir="$baseDir/htdocs"
-  
-  if [[ -d "$htdocsDir" ]]; then
-    log_info "Creating htdocs archive..."
-    (cd "$(dirname "$htdocsDir")" && COPYFILE_DISABLE=1 tar czf - htdocs) | \
-    oc create configmap "${NAME}-htdocs" \
-      --namespace="$NAMESPACE" \
-      --from-file=htdocs.tar.gz=/dev/stdin \
-      --dry-run=client -o yaml | \
-      oc label --local -f - app="$LABEL_APP" -o yaml | \
-      oc apply -f -
-  else
-    log_error "htdocs directory not found at $htdocsDir"
-    return 1
-  fi
-}
+
 
 function createScriptsConfigMaps() {
   local NAME="$1"
@@ -968,14 +948,6 @@ function createScriptsConfigMaps() {
   
   log_debug "Creating scripts configmaps"
   
-  # Create extraction script configmap
-  oc create configmap "${NAME}-scripts" \
-    --namespace="$NAMESPACE" \
-    --from-file="$baseDir/extract-htdocs.sh" \
-    --dry-run=client -o yaml | \
-    oc label --local -f - app="$LABEL_APP" -o yaml | \
-    oc apply -f -
-
   # Create config generator script configmap
   oc create configmap "${NAME}-scripts-init" \
     --namespace="$NAMESPACE" \
@@ -1080,12 +1052,6 @@ function setupNginxAndDeploy() {
   # Create rest-proxy configmap
   if ! createRestProxyConfigMap "$NAME"; then
     log_error "Failed to create rest-proxy configmap"
-    return 1
-  fi
-  
-  # Create htdocs configmap
-  if ! createHtdocsConfigMap "$NAME"; then
-    log_error "Failed to create htdocs configmap"
     return 1
   fi
   

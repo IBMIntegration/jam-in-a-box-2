@@ -138,21 +138,67 @@ spec:
         app: {{LABEL_APP}}
     spec:
       initContainers:
+      - name: htdocs-fetcher
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Installing required tools..."
+          apk add --no-cache git
+          echo "Cloning repository to get htdocs content..."
+          git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
+          echo "Copying htdocs content..."
+          if [ -d "/tmp/repo/scripts/helpers/start-here-app/htdocs" ]; then
+            cp -r /tmp/repo/scripts/helpers/start-here-app/htdocs/* /shared-htdocs/
+            echo "Htdocs content copied successfully"
+            echo "Directory contents:"
+            ls -la /shared-htdocs/
+          else
+            echo "Htdocs directory not found, creating fallback content"
+            cat > /shared-htdocs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Start Here App - Debug</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 50px; }
+                  .container { max-width: 800px; margin: 0 auto; }
+                  .warning { background: #fff3cd; padding: 15px; border-radius: 5px; }
+                  .debug { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>Start Here App - Debug Mode</h1>
+                  <div class="warning">
+                      <h3>⚠️ No Content Directory Found</h3>
+                      <p>The htdocs directory was not found in the repository.</p>
+                      <p>Expected location: <code>scripts/helpers/start-here-app/htdocs/</code></p>
+                  </div>
+                  <div class="debug">
+                      <h3>Debug Information</h3>
+                      <p>This page was generated because no htdocs directory was found.</p>
+                      <p>Repository: {{REPO_GIT_URL}}</p>
+                      <p>Branch: {{GIT_BRANCH}}</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+            echo "Created fallback index.html"
+          fi
+          echo "Htdocs init container completed"
+        volumeMounts:
+        - name: html-content
+          mountPath: /shared-htdocs
       - name: setup
         image: registry.redhat.io/ubi8/nodejs-20:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
-          echo "Copying entrypoint scripts..."
-          cp /scripts-src/* /scripts-dest/
-          chmod +x /scripts-dest/*
-          echo "Scripts copied and made executable:"
-          ls -la /scripts-dest/
           echo "Running config generator script..."
           node /scripts-init/config-generator.js
         volumeMounts:
-        - name: scripts-source
-          mountPath: /scripts-src
         - name: entrypoint-scripts
           mountPath: /scripts-dest
         - name: setup-config
@@ -208,8 +254,6 @@ spec:
           subPath: .htpasswd
         - name: entrypoint-scripts
           mountPath: /docker-entrypoint.d
-        - name: htdocs-archive
-          mountPath: /archive
         - name: html-content
           mountPath: /usr/share/nginx/html
         - name: generated-configs
@@ -282,16 +326,10 @@ spec:
       - name: htpasswd
         secret:
           secretName: {{NAME}}-nginx-auth
-      - name: scripts-source
-        configMap:
-          name: {{NAME}}-scripts
       - name: entrypoint-scripts
         emptyDir: {}
       - name: generated-configs
         emptyDir: {}
-      - name: htdocs-archive
-        configMap:
-          name: {{NAME}}-htdocs
       - name: html-content
         emptyDir: {}
       - name: setup-config
