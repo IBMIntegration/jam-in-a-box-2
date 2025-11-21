@@ -315,7 +315,9 @@ export async function resolveFile(requestPath, basePath) {
             const markdownContent = await fs.readFile(markdownPath, 'utf8');
             // Process template variables before converting to HTML
             const processedMarkdown = parseTemplateVariables(markdownContent);
-            const htmlContent = awaitconvertMarkdownToHtml(processedMarkdown, path.basename(markdownPath, '.md'));
+            const htmlContent = await convertMarkdownToHtml(
+              processedMarkdown, path.basename(markdownPath, '.md')
+            );
             
             return {
               status: 200,
