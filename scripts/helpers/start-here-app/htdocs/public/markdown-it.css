@@ -36,6 +36,9 @@ th, td {
 th {
     background-color: #f2f2f2;
 }
+.content {
+    margin-top: 2.5rem;
+}
 .failed-substitution {
     background-color: #ffebee;
     color: #c62828;
@@ -115,8 +118,9 @@ img {
     cursor: pointer;
     transition: opacity 0.3s ease;
 }
-img:hover {
-    opacity: 0.8;
+img.modal-content:hover {
+    border: 0.25rem solid white;
+    border-radius: 0.5rem;;
 }
 /* Modal styles for image lightbox */
 .image-modal {

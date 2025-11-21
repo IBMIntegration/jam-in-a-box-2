@@ -1,3 +1,10 @@
+@import url("plex-fonts/plex.css");
+
+body {
+  font-family: 'IBM Plex Sans', Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
 
 cds-header {
   border-bottom: 1px solid #e0e0e0;
@@ -91,131 +98,6 @@ cds-tile#services-tile {
   }
 }
 
-/* .rest-client {
-  div.form-section:empty,
-  div.response-section:empty {
-    display: none;
-  }
-
-  div.form-section,
-  div.response-section {
-    margin: 0.5rem auto;
-  }
-
-  div.links {
-    position: relative;
-    margin: 0.5rem auto;
-  }
-  h1 {
-    margin: 0.5rem auto;
-    position: relative;
-    padding: 1rem 0;
-  }
-
-  .form-section,
-  .form-section .field-wrapper {
-    label {
-      display: inline-block;
-      width: 36%;
-    }
-    select, input {
-      width: 60%;
-    }
-  }
-} */
-
-/* div.form-section,
-div.response-section,
-div.links {
-  .link-groups {
-    ul {
-      list-style: none;
-      padding-inline-start: 0;
-      li {
-        margin-bottom: 0.32rem;
-      }
-    }
-  }
-
-  .highlight {
-    font-weight: bold;
-  }
-
-
-  div.error {
-    background-color: var(--error-bg-color);
-    border: 1px solid var(--error-border-color);
-    position: relative;
-    button.x {
-      background-color: transparent;
-      border: none;
-      position: absolute;
-      padding-right: 1rem;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      text-align: center;
-      vertical-align: middle;
-      color: var(--error-border-color);
-    }
-    button.x:active {
-      background-color: #00000010;
-    }
-  }
-  button.x {
-    border: 1px solid var(--button-bg);
-    background-color: white;
-    position: absolute;
-    padding-right: 1rem;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    text-align: center;
-    vertical-align: middle;
-    color: var(--button-bg);
-  }
-  button.x:active {
-    border-color: var(--button-bg-active);
-    color: var(--button-bg-active);
-  }
-
-  div#host-selector #host-selected {
-    margin: 0.5rem 0 0;
-    font-size: 6pt;
-  }
-
-  .field-wrapper {
-    margin: 0.5rem 0;
-  }
-  .field-wrapper:first {
-    margin-top: 1rem;
-  }
-  .header-field-wrapper input {
-    width: calc(100% - 3.3rem) !important;
-  }
-  .header-field-wrapper button {
-    position: relative;
-    top: -1px;
-  }
-
-  div#send {
-    button {
-      position: relative;
-      right: 0;
-    }
-    .anxiety-killer {
-      display: inline-block;
-      margin: 0 0 0 1rem;
-    }
-  }
-
-  p.error {
-    color: var(--error-text-color);
-  }
-
-  .response-section div.header .key {
-    font-weight: bold;
-  }
+.rest-client {
+  display: none;
 }
- */
-

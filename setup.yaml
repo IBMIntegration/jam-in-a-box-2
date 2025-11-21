@@ -8,9 +8,9 @@
 # 3. Clone the repository
 # 4. Run main.sh to set up the entire environment
 #
-# Optional: Create a ConfigMap named 'jam-setup-params' in the current namespace 
+# Optional: Create a ConfigMap named 'jam-setup-params' in the default namespace 
 # to customize parameters. Example:
-#   oc create configmap jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary"
+#   oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary"
 
 # Create jam-in-a-box namespace if it doesn't exist
 apiVersion: v1
@@ -115,9 +115,9 @@ spec:
       # Check for optional parameters ConfigMap
       echo "Checking for custom parameters..."
       PARAMETERS=""
-      if oc get configmap jam-setup-params -n tools 2>/dev/null; then
+      if oc get configmap jam-setup-params -n default 2>/dev/null; then
         echo "Found custom parameters ConfigMap"
-        PARAMETERS=$(oc get configmap jam-setup-params -n tools -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+        PARAMETERS=$(oc get configmap jam-setup-params -n default -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
       else
         echo "No custom parameters found, using defaults"
       fi

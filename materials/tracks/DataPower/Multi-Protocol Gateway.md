@@ -12,12 +12,11 @@ IBM DataPower is an industry-leading integration solution that is designed to se
 
 For this Lab we are putting you in the role of a Senior Integration Operations Specialist from Focus Corporation. You are expected to create a Multi-Protocol Gateway that takes https: traffic flowing into a DataPower and convert it to http. The lab will give you the concepts on how to create a Multi-Protocol Gateway that can supports other protocols to converts to protocol your backend might support.
 
-
 ### About this hands-on lab
 
 In the first part of this lab, you will log into an application domain in DataPower. An application domain is a feature that allows the creation of a development partition for services that process requests. The default domain is used by DataPower Gateway to create, modify and control system-wide resources such as network interfaces, users, and control DataPower objects. Application domains can only be created in the default domains. An example is an airline has four lines of business on their DataPower Gateways, Loyalty, Ticketing, Baggage and Revenue. They can partition their DataPower as follows:
 
-![DataPower Domain Structure](images/MP1.svg)
+![DataPower Domain Structure showing four application domains (Loyalty, Ticketing, Baggage, Revenue) within the Default Domain](images/MP1.svg)
 
 In the second part of this lab, you will create a key/cert pair that will used with the Multi-Protocol Gateway. Keys and certs are used for secure communication and authentication.
 
@@ -59,13 +58,13 @@ A multiprotocol gateway can support more than one client protocol. Similarly, th
 
 The following figure provides an illustration of the static server architecture that the service supports.
 
-![Static server architecture diagram](images/MP2.svg)
+![Static server architecture diagram showing HTTP, HTTPS, and IBM MQ protocol handlers routing to backend services](images/MP2.svg)
 
 A multiprotocol gateway can accept client requests through any of the protocol handlers that are shown (HTTP, HTTPS, or IBM MQ). A static URL determines the destination for all traffic. This server-side traffic can employ one of the protocols that are shown (HTTP, HTTPS, or IBM MQ).
 
 When the remote service endpoint is determined dynamically, the multiprotocol gateway supports a stateful raw XML handler. Because the connection is stateful, this protocol handler can communicate with only a remote service that also uses the same protocol. The following figure shows other protocol handlers that can route to the other protocols dynamically.
 
-![Dynamic server architecture diagram](images/MP3.svg)
+![Dynamic server architecture diagram showing multiple protocol handlers with dynamic routing capabilities](images/MP3.svg)
 
 Taken from IBM DataPower Knowledge Centre - https://www.ibm.com/docs/en/datapower-gateway/10.6.0?topic=development-multi-protocol-gateway
 
@@ -78,7 +77,7 @@ Taken from IBM DataPower Knowledge Centre - https://www.ibm.com/docs/en/datapowe
     1. Select `default` in the `Domain` field
     1. Click `Log in` to log in to DataPower’s Web Console
 
-    ![Datapower login screen](images/MP4.png)
+    ![DataPower login screen with Username, Password, and Domain fields](images/MP4.png)
 
 ## Create an application domain
 
@@ -86,23 +85,23 @@ As a general best practice, the `default` domain should only be used for adminis
 
 1. In the search field in the top left corner, search for `Application` and click `Application domain`. `Application domain` may be listed twice. That's ok; simply click the first one.
 
-    ![Search for Application Domain](images/MP5.png)
+    ![Search results showing Application domain option in the search dropdown](images/MP5.png)
 
     Click `Add` in the top left corner.
 
-    ![Add button](images/MP6.png)
+    ![Add button highlighted in the top toolbar](images/MP6.png)
 
     Give your new Application Domain the name `mpgw-lab` and click `Apply`.
 
-    ![Application Domain screen](images/MP7.png)
+    ![Application Domain configuration screen with name field filled as 'mpgw-lab'](images/MP7.png)
 
     Save your changes. Click `Save`.
 
-    ![Confirmation screen and Save button](images/MP8.png)
+    ![Configuration saved confirmation dialog with Save button highlighted](images/MP8.png)
 
     Switch to your new Application domain. Click the domain pulldown (labeled with the current domain `default`) and select your new domain.
 
-    ![Domain switch](images/MP9.png)
+    ![Domain dropdown menu showing switch from 'default' to 'mpgw-lab' domain](images/MP9.png)
 
 ## Create a TLS server profile
 
@@ -114,30 +113,30 @@ You need keys and certificates to do create your TLS server profile. You may pro
 
 1. In the search field in the top left corner, search for `crypto` and click `Crypto tools`.
 
-    ![Search for crypto tools](images/MP10.png)
+    ![Search results showing Crypto tools option in the search dropdown](images/MP10.png)
 
 1. Fill in the subject fields for the certificate. You may fill in as many as you like, but only the `CN` field is required.
 1. In the `Key type` field, select `ECDSA`.
 
-    ![Certificate subject and key type](images/MP11.png)
+    ![Certificate configuration form with subject fields and ECDSA key type selected](images/MP11.png)
 
 1. Scroll down and enable `Export private key`. This is your only opportunity to export a key; you will not be able to download the key later.
 1. Ensure `Generate key and certificate objects` is enabled. It should be enabled by default.
 1. Give the objects a name like `mpg-lab-keys`.
 
-    ![Export and generate keys](images/MP12.png)
+    ![Key generation settings with 'Export private key' enabled and object name 'mpg-lab-keys'](images/MP12.png)
 
 1. Scroll back up and click `Submit`
 
-    ![Export and generate keys](images/MP12-1.png)
+    ![Submit button highlighted on the certificate generation form](images/MP12-1.png)
 
 1. Confirm the confirmation
 
-    ![Export and generate keys](images/MP12-2.png)
+    ![Confirmation dialog for certificate and key generation](images/MP12-2.png)
 
 1. Click `Save`
 
-    ![Export and generate keys](images/MP12-3.png)
+    ![Save button highlighted after successful certificate generation](images/MP12-3.png)
 
 ### Create a keystore
 
@@ -145,19 +144,19 @@ The keystore, formerly known as "indentification credentials" encapsulates a key
 
 1. In the search field in the top left corner, search for `key` and click `Keystore (identification credentials)`
 
-    ![Search for keystore](images/MP13.png)
+    ![Search results showing Keystore (identification credentials) option](images/MP13.png)
 
 1. Click `Add`
 
-    ![img](images/MP14.png)
+    ![Add button on the keystore management page](images/MP14.png)
 
 1. Give your keystore a name like `mpgw-idcreds` and select the self-signed key and certificate objects you created in the previous section of this exercise. It's not necessary to select an intermediate certificate with self-signed credentials.
 
-    ![img](images/MP15.png)
+    ![Keystore configuration form with name 'mpgw-idcreds' and key/certificate selection](images/MP15.png)
 
 1. Click `Apply` and `Save`
 
-    ![img](images/MP16.png)
+    ![Apply and Save buttons on the keystore configuration page](images/MP16.png)
 
 ### Create the TLS server profile
 
@@ -165,23 +164,23 @@ Now that we have a Keystore, let's create a TLS server profile
 
 1. Search for `TLS server profile`.
 
-    ![Search for TLS server profile](images/MP17.png)
+    ![Search results showing TLS server profile option](images/MP17.png)
 
 1. Click on the `Add` button
 
-    ![Add button](images/MP18.png)
+    ![Add button on the TLS server profile management page](images/MP18.png)
 
 1. Give your TLS Server Profile a name like `mpgw-lab-tls-server-profile`.
 
-    ![Profile name](images/MP19.png)
+    ![TLS server profile name field with 'mpgw-lab-tls-server-profile' entered](images/MP19.png)
 
 1. Scroll down and select the Keystore object you createed in the previous section.
 
-    ![Profile name](images/MP20.png)
+    ![Keystore selection dropdown showing the previously created keystore](images/MP20.png)
 
 1. Click `Apply` and then `Save`
 
-    ![Profile name](images/MP21.png)
+    ![Apply and Save buttons for TLS server profile configuration](images/MP21.png)
 
 ## Create a HTTPS handler
 
@@ -189,40 +188,40 @@ The HTTPS Handler represents the listener at that takes requests into DataPower.
 
 1. Search for `HTTPS Handler`
 
-    ![Search for HTTPS Handler](images/MP22.png)
+    ![Search results showing HTTPS Handler option in the dropdown](images/MP22.png)
 
 1. Click `Add`
 
-    ![Add button](images/MP23.png)
+    ![Add button on the HTTPS Handler management page](images/MP23.png)
 
 1. From Create HTTPS handler page
 
     1. Give your handler a name, such as `mpgw-lab-handler`.
 
-        ![Handler name](images/MP24.png)
+        ![HTTPS handler name field with 'mpgw-lab-handler' entered](images/MP24.png)
 
     1. In the Port field, set the port you would like to bind your HTTPS handler to. For the purposes of this lab, Use `10443`. A service and route has already been created in OpenShift to expose that port.
 
-        ![](images/MP25.png)
+        ![Port field set to 10443 for the HTTPS handler](images/MP25.png)
 
 
     1. For Allowed Methods and versions ensure that GET Method is selected
 
-        ![](images/MP26.png)
+        ![Allowed Methods configuration with GET method selected](images/MP26.png)
 
     1. For TLS server type, select Server profile
 
     1. For the TLS server profile, select the profile you created earlier.
 
-        ![](images/MP27.png)
+        ![TLS server type set to 'Server profile' and TLS server profile selected](images/MP27.png)
 
     1. Click `Apply` and then `Save`
 
-        ![](images/MP28.png)
+        ![Apply and Save buttons for HTTPS handler configuration](images/MP28.png)
 
         Note: You will get a message that the handler is down. This is expected.
 
-        ![](images/MP29.png)
+        ![Expected message showing the handler is down until configuration is complete](images/MP29.png)
 
 ## Create a Multi-Protocol Gateway Policy
 
@@ -230,18 +229,18 @@ The MPGW-Policy is the logic for the call. In this example we are going to set a
 
 1. Search for `Multi-Protocol Gateway Policy`
 
-    ![](images/MP30.png)
+    ![Search results showing Multi-Protocol Gateway Policy option](images/MP30.png)
 
 1. Click `Add`
 
-    ![](images/MP31.png)
+    ![Add button on the Multi-Protocol Gateway Policy management page](images/MP31.png)
 
 1. From the Configure Multi-Protocol Gateway Style Policy page:
 
     1. Give it a name, like `lab-mpgw-policy`
     2. Click `Add` to add a rule
 
-    ![](images/MP32.png)
+    ![Multi-Protocol Gateway Policy configuration with name 'lab-mpgw-policy' and Add rule button](images/MP32.png)
 
 1. From the Rule tab,
 
@@ -251,49 +250,49 @@ The MPGW-Policy is the logic for the call. In this example we are going to set a
 
     1. Observe the ⚠️ next to the `Match rule` icon. Click the icon.
 
-        ![](images/MP34.png)
+        ![Warning icon next to Match rule indicating configuration needed](images/MP34.png)
 
     1. We need to create a match rule. Click the `+` sign button next to the `Matching Rule` field.
 
-        ![](images/MP35.png)
+        ![Plus button next to Matching Rule field for creating new rule](images/MP35.png)
 
     1. Name it `all-uri-paths`, then click on `Add`.
 
-        ![](images/MP33.png)
+        ![New matching rule dialog with name 'all-uri-paths' entered](images/MP36.png)
 
     1. Set the URL match to `*` (asterisk) and click `Apply`
 
-        ![](images/MP37.png)
+        ![URL match configuration with asterisk (*) pattern to match all paths](images/MP37.png)
 
     1. Observe the URL match rule you just created is listed under `Rules`. Click `Apply`.
 
-        ![](images/MP38.png)
+        ![Rules list showing the newly created 'all-uri-paths' rule](images/MP38.png)
 
     1. Observe the `Matching Rule` is set to the rule you just created. Click `Done`
 
-        ![](images/MP39.png)
+        ![Matching Rule field populated with the created rule](images/MP39.png)
 
     1. Notice the ⚠️ seen earlier is gone.
 
-        ![](images/MP40.png)
+        ![Match rule configuration complete with warning icon removed](images/MP40.png)
 
 1. Any policy without a backend must have `service/mpgw/skip-backside` set to `. Let's add the policy rule to set that variable value.
 
     1. Click on the `+` the right of the Match rule icon.
 
-        ![](images/MP41.png)
+        ![Plus button to add new policy rule after the Match rule](images/MP41.png)
     
     1. Scroll down and select `Set Variable`.
 
-        ![](images/MP42.png)
+        ![Policy rule options with Set Variable highlighted](images/MP42.png)
 
     1. Observe the ⚠️ next to the new `Set Variable` icon. Click the icon.
 
-        ![](images/MP43.png)
+        ![Warning icon next to Set Variable rule requiring configuration](images/MP43.png)
 
     1. Set the `Context` to `INPUT`
 
-        ![](images/MP44.png)
+        ![Context field set to INPUT in Set Variable configuration](images/MP44.png)
 
     1. In the `Options` pane, set the following values and then click `Done`:
 
@@ -301,62 +300,62 @@ The MPGW-Policy is the logic for the call. In this example we are going to set a
         - **Variable name** to `service/mpgw/skip-backside`
         - **Variable value** to `1`
 
-        ![](images/MP45.png)
+        ![Set Variable options with protocol var://, variable name service/mpgw/skip-backside, and value 1](images/MP45.png)
 
 1. Now add a GatewayScript policy rule to set a very simple response payload.
 
     1. Click on the `+` the right of the Set Variable rule icon.
 
-        ![](images/MP46.png)
+        ![Plus button to add new policy rule after the Set Variable rule](images/MP46.png)
 
     1. Select `GatewayScript`
 
-        ![](images/MP47.png)
+        ![Policy rule options with GatewayScript highlighted](images/MP47.png)
 
     1. Observe the ⚠️ next to the new `GatewayScript` icon. Click the icon.
 
-        ![](images/MP48.png)
+        ![Warning icon next to GatewayScript rule requiring configuration](images/MP48.png)
 
     1. Upload the file in [resources/gws.js](resources/gws.js).
     
         1. Download the [linked file](resource/gws.js).
         1. Click the upload icon
 
-            ![](images/MP49.png)
+            ![Upload icon for uploading GatewayScript file](images/MP49.png)
 
         1. Upload the file. Drag the file from your local OS file manager (e.g. macOS Finder) to the `Drag and drop...` area and click `Upload`.
 
-            ![](images/MP50.png)
+            ![File upload dialog with drag and drop area for gws.js file](images/MP50.png)
     
     1. Click `Done`.
 
-        ![](images/MP51.png)
+        ![Done button after GatewayScript configuration is complete](images/MP51.png)
 
 1. One more policy rule is needed to complete the chain: the `Results` rule.
 
     1. Click on the `+` the right of the GatewayScript rule icon.
 
-      ![](images/MP2.png)
+      ![Plus button to add Results rule after the GatewayScript rule](images/MP52.png)
 
     1. Select `Results`.
 
-        ![](images/MP53.png)
+        ![Policy rule options with Results highlighted](images/MP53.png)
     
     1. No further configuration is needed but you may view the options available by clicking the `Results` icon.
 
-        ![](images/MP54.png)
+        ![Results rule icon in the policy chain](images/MP54.png)
 
         Click `×` (cancel) or `Done` to exit. The `Done` button is only activated if there are changes.
 
-        ![](images/MP55.png)
+        ![Results rule configuration options dialog](images/MP55.png)
 
 1. Click `Done`
 
-    ![](images/MP56.png)
+    ![Done button to complete policy rule configuration](images/MP56.png)
 
 1. Click `Apply Policy` and then `Save`
 
-    ![](images/MP57.png)
+    ![Apply Policy and Save buttons for multi-protocol gateway policy](images/MP57.png)
 
 ## Create a New Multi-Protocol Gateway
 
@@ -364,7 +363,7 @@ The MPGW brings everything together. The listen is set to determine how it recei
 
 1. Search for `New multi-protocol gateway`
 
-    ![](images/MP58.png)
+    ![Search results showing New multi-protocol gateway option](images/MP58.png)
 
 1. In the `General Configuration` settings:
 
@@ -373,31 +372,31 @@ The MPGW brings everything together. The listen is set to determine how it recei
     1. Set **Processing policy**`** to the multi-protocol gateway policy we created earlier.
     1. Set **Type** to `Dynamic backend`.
 
-    ![](images/MP59.png)
+    ![General configuration with name 'lab-mpgw', XML Manager 'default', processing policy selected, and Dynamic backend type](images/MP59.png)
 
 1. In the Front side settings
 
     1. In Front Side Protocol (Required) selection (A) field, select the Front Side handler you created earlier and press the `Add` button.
 
-    ![](images/MP60.png)
+    ![Front Side Protocol selection with HTTPS handler and Add button](images/MP60.png)
 
     1. The `[down - Cannot install without a service.]` message is normal at this point. The message will go away when this new multi-protocol gateway setup is completed.
 
-    ![](images/MP61.png)
+    ![Normal 'down - Cannot install without a service' message for incomplete configuration](images/MP61.png)
 
 1. In the User Agent settings:
 
     1. Set both **Characterize response traffic** and **Characterize request traffic** to `XML`
 
-    ![](images/MP62.png)
+    ![User Agent settings with both request and response traffic set to XML](images/MP62.png)
 
     2. Toggle Propagate URI (B) to Off
 
-    ![](images/MP63.png)
+    ![Propagate URI toggle switched to Off position](images/MP63.png)
 
 1. Click on the `Apply` and `Save`
 
-    ![](images/MP64.png)
+    ![Apply and Save buttons to complete multi-protocol gateway configuration](images/MP64.png)
 
 ## Testing
 
