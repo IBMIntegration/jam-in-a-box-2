@@ -56,7 +56,7 @@ log_info "Starting tool check..."
 checkTool jq oc
 
 log_info "Checking OpenShift login status..."
-if ! oc whoami &> /dev/null; then
+if ! kubectl auth can-i get pods &> /dev/null; then
   log_error "Not logged in to OpenShift. Please run 'oc login' first."
   exit 1
 fi

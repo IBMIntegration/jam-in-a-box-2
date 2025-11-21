@@ -23,7 +23,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: jam-setup-sa
-  namespace: tools
+  namespace: jam-in-a-box
 ---
 # ClusterRoleBinding to give the service account cluster-admin privileges
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33,7 +33,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: jam-setup-sa
-  namespace: tools
+  namespace: jam-in-a-box
 roleRef:
   kind: ClusterRole
   name: cluster-admin
@@ -44,7 +44,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: jam-setup-pod
-  namespace: tools
+  namespace: jam-in-a-box
   labels:
     app: jam-setup
 spec:
@@ -55,29 +55,6 @@ spec:
   volumes:
   - name: repo-volume
     emptyDir: {}
-  
-  # Init container to clone the repository
-  initContainers:
-  - name: git-clone
-    image: registry.redhat.io/ubi8/ubi:latest
-    workingDir: /workspace
-    volumeMounts:
-    - name: repo-volume
-      mountPath: /workspace
-    command: ["/bin/bash", "-c"]
-    args:
-    - |
-      echo "=== Integration Jam-in-a-Box Setup - Git Clone Phase ==="
-      echo "Installing git..."
-      dnf install -y git
-      
-      echo "Cloning repository..."
-      git clone https://github.com/capnajax/integration-jam-in-a-box.git .
-      
-      echo "Repository cloned successfully. Contents:"
-      ls -la
-      
-      echo "Git clone phase complete."
   
   # Main container to run setup
   containers:
@@ -100,29 +77,75 @@ spec:
       
       # Install required tools
       echo "Installing required tools..."
-      dnf install -y openssl curl tar gzip findutils procps-ng
+      dnf install -y git openssl curl tar gzip findutils procps-ng jq
       
-      # Download and install oc client
-      echo "Installing OpenShift CLI..."
-      curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz | tar -xzf - -C /usr/local/bin/ oc
-      chmod +x /usr/local/bin/oc
+      # Install kubectl (compatible with OpenShift)
+      echo "Installing kubectl..."
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      chmod +x kubectl
+      mv kubectl /usr/local/bin/
       
-      # Make scripts executable
-      echo "Setting up permissions..."
-      find . -name "*.sh" -exec chmod +x {} \;
-      chmod +x main.sh
+      # Create oc alias for kubectl
+      ln -s /usr/local/bin/kubectl /usr/local/bin/oc
       
-      # Check for optional parameters ConfigMap
+      # Configure kubectl/oc to use the ServiceAccount token
+      echo "Configuring OpenShift CLI authentication..."
+      export KUBECONFIG=/tmp/kubeconfig
+      kubectl config set-cluster kubernetes --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      kubectl config set-credentials serviceaccount --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      kubectl config set-context default --cluster=kubernetes --user=serviceaccount --namespace=jam-in-a-box
+      kubectl config use-context default
+      
+      # Make KUBECONFIG available to all subsequent commands and ensure oc works
+      echo "export KUBECONFIG=/tmp/kubeconfig" >> /tmp/env_setup
+      echo "export PATH=/usr/local/bin:\$PATH" >> /tmp/env_setup
+      
+      # Verify authentication
+      echo "Verifying OpenShift authentication..."
+      kubectl auth can-i get pods --namespace=jam-in-a-box
+      if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to authenticate with OpenShift"
+        exit 1
+      fi
+      echo "Authentication successful!"
+      
+      # Test kubectl command specifically
+      echo "Testing kubectl command..."
+      kubectl version --client
+      kubectl auth whoami 2>/dev/null || echo "ServiceAccount authentication active"
+      
+      # Check for optional parameters ConfigMap first
       echo "Checking for custom parameters..."
       PARAMETERS=""
-      if oc get configmap jam-setup-params -n default 2>/dev/null; then
+      if kubectl get configmap jam-setup-params -n default 2>/dev/null; then
         echo "Found custom parameters ConfigMap"
-        PARAMETERS=$(oc get configmap jam-setup-params -n default -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+        PARAMETERS=$(kubectl get configmap jam-setup-params -n default -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
       else
         echo "No custom parameters found, using defaults"
       fi
       
       echo "Parameters to use: ${PARAMETERS:-'(none)'}"
+      
+      # Determine which branch to clone based on parameters
+      BRANCH="main"
+      if [[ "$PARAMETERS" == *"--canary"* ]]; then
+        BRANCH="canary"
+        echo "Using canary branch based on --canary parameter"
+      else
+        echo "Using main branch (default)"
+      fi
+      
+      # Clone the repository with the determined branch
+      echo "Cloning repository from branch: $BRANCH"
+      git clone -b $BRANCH https://github.com/capnajax/integration-jam-in-a-box.git .
+      
+      echo "Repository cloned successfully. Contents:"
+      ls -la
+      
+      # Make scripts executable
+      echo "Setting up permissions..."
+      find . -name "*.sh" -exec chmod +x {} \;
+      chmod +x main.sh
       
       # Run the main setup script
       echo "Starting main setup process..."
@@ -132,6 +155,15 @@ spec:
       
       if [ -f "./main.sh" ]; then
         echo "Executing: ./main.sh ${PARAMETERS}"
+        # Source the environment setup to ensure KUBECONFIG is available
+        source /tmp/env_setup
+        
+        # Debug: Show current authentication status before running main.sh
+        echo "Debug: Current authentication status:"
+        echo "KUBECONFIG=$KUBECONFIG"
+        kubectl auth whoami 2>/dev/null || echo "Using ServiceAccount token authentication"
+        kubectl get pods --namespace=jam-in-a-box --limit=1 >/dev/null 2>&1 && echo "OpenShift access confirmed" || echo "OpenShift access failed"
+        
         ./main.sh ${PARAMETERS}
         SETUP_EXIT_CODE=$?
         
@@ -149,12 +181,13 @@ spec:
       # Keep container running for debugging/testing
       echo "Setup phase complete. Container will remain running for inspection."
       echo "You can exec into this pod to test changes or debug issues:"
-      echo "  oc exec -it jam-setup-pod -n tools -- /bin/bash"
+      echo "  oc exec -it jam-setup-pod -n jam-in-a-box -- /bin/bash"
       echo ""
       echo "To clean up when done:"
-      echo "  oc delete pod jam-setup-pod -n tools"
+      echo "  oc delete pod jam-setup-pod -n jam-in-a-box"
       echo "  oc delete clusterrolebinding jam-setup-cluster-admin"
-      echo "  oc delete serviceaccount jam-setup-sa -n tools"
+      echo "  oc delete serviceaccount jam-setup-sa -n jam-in-a-box"
+      echo "  oc delete namespace jam-in-a-box"
       
       # Sleep to keep container alive
       while true; do
