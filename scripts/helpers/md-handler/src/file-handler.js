@@ -6,7 +6,7 @@ import MarkdownIt from 'markdown-it';
 import markdownItTocDoneRight from 'markdown-it-toc-done-right';
 
 const INCLUDES_DIR = path.join('/shared-includes', 'includes');
-const INCLUDES = ['header', 'footer', 'head'];
+const INCLUDES = ['header', 'footer', 'head', 'image-modal'];
 
 /**
  * Reads a file from the include directory
