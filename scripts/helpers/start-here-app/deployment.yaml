@@ -143,18 +143,46 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          echo "=== Htdocs Fetcher Init Container ==="
           echo "Installing required tools..."
           apk add --no-cache git
           echo "Cloning repository to get htdocs content..."
           git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
-          echo "Copying htdocs content..."
+          echo "Repository cloned successfully. Checking for htdocs..."
+          echo "Repository structure:"
+          ls -la /tmp/repo/
+          echo "Start-here-app directory:"
+          ls -la /tmp/repo/scripts/helpers/start-here-app/ || echo "start-here-app directory not found"
+          
           if [ -d "/tmp/repo/scripts/helpers/start-here-app/htdocs" ]; then
-            cp -r /tmp/repo/scripts/helpers/start-here-app/htdocs/* /shared-htdocs/
-            echo "Htdocs content copied successfully"
-            echo "Directory contents:"
-            ls -la /shared-htdocs/
+            echo "Found htdocs directory, showing contents:"
+            ls -la /tmp/repo/scripts/helpers/start-here-app/htdocs/
+            echo "Copying content to shared volume..."
+            
+            # Ensure target directory exists
+            mkdir -p /shared-htdocs
+            
+            # Copy all content
+            if cp -r /tmp/repo/scripts/helpers/start-here-app/htdocs/* /shared-htdocs/ 2>/dev/null; then
+              echo "Content copied successfully"
+            else
+              echo "Copy command failed or no files to copy"
+            fi
+            
+            # Show what we have now
+            echo "Final htdocs contents:"
+            ls -la /shared-htdocs/ || echo "No files in shared htdocs"
+            
           else
-            echo "Htdocs directory not found, creating fallback content"
+            echo "Htdocs directory not found at expected location"
+            echo "Available directories in scripts/helpers/:"
+            ls -la /tmp/repo/scripts/helpers/ || echo "helpers directory not found"
+          fi
+          
+          # Always create a basic index if nothing exists
+          if [ ! -f "/shared-htdocs/index.html" ]; then
+            echo "Creating fallback index.html..."
+            mkdir -p /shared-htdocs
             cat > /shared-htdocs/index.html << 'EOF'
           <!DOCTYPE html>
           <html>
@@ -187,7 +215,7 @@ spec:
           EOF
             echo "Created fallback index.html"
           fi
-          echo "Htdocs init container completed"
+          echo "=== Htdocs fetcher completed ==="
         volumeMounts:
         - name: html-content
           mountPath: /shared-htdocs
@@ -199,8 +227,6 @@ spec:
           echo "Running config generator script..."
           node /scripts-init/config-generator.js
         volumeMounts:
-        - name: entrypoint-scripts
-          mountPath: /scripts-dest
         - name: setup-config
           mountPath: /scripts-init
         - name: setup-output-config
@@ -216,27 +242,48 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          echo "=== Materials Fetcher Init Container ==="
           echo "Installing required tools..."
-          apk add --no-cache curl tar
-          echo "Downloading materials archive from git repository..."
+          apk add --no-cache curl tar wget git
+          echo "Attempting to download materials archive..."
           ARCHIVE_URL="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}/archives/materials.tar.gz"
           echo "Fetching archive from: ${ARCHIVE_URL}"
-          if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}"; then
-                  echo "Archive downloaded successfully"
+          
+          # Try wget first, then curl
+          DOWNLOAD_SUCCESS=false
+          if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}" 2>/dev/null; then
+            echo "Archive downloaded successfully with wget"
+            DOWNLOAD_SUCCESS=true
+          elif curl -L -o /tmp/materials.tar.gz "${ARCHIVE_URL}" 2>/dev/null; then
+            echo "Archive downloaded successfully with curl"
+            DOWNLOAD_SUCCESS=true
+          fi
+          
+          if [ "$DOWNLOAD_SUCCESS" = "true" ] && [ -f "/tmp/materials.tar.gz" ]; then
             echo "Extracting materials to shared volume..."
             cd /shared-materials
-            tar -xzf /tmp/materials.tar.gz --strip-components=1
-            echo "Materials extracted successfully"
-            ls -la /shared-materials/
+            if tar -xzf /tmp/materials.tar.gz --strip-components=1 2>/dev/null; then
+              echo "Materials extracted successfully"
+              ls -la /shared-materials/
+            else
+              echo "Failed to extract archive, trying without strip-components"
+              tar -xzf /tmp/materials.tar.gz 2>/dev/null || echo "Extraction failed completely"
+              ls -la /shared-materials/
+            fi
           else
-            echo "Failed to download materials archive"
-            echo "Falling back to downloading individual files..."
-            mkdir -p /shared-materials/tracks
-            # Create a basic index if archive is not available
-            echo "# Materials" > /shared-materials/tracks/index.md
-            echo "Materials archive not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
+            echo "Failed to download materials archive, trying direct git clone..."
+            git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
+            if [ -d "/tmp/repo/materials" ]; then
+              echo "Found materials directory in repo, copying..."
+              cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
+            else
+              echo "No materials directory found, creating fallback..."
+              mkdir -p /shared-materials/tracks
+              echo "# Materials" > /shared-materials/tracks/index.md
+              echo "Materials not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
+            fi
           fi
-          echo "Init container completed"
+          echo "=== Materials fetcher completed ==="
         volumeMounts:
         - name: materials-volume
           mountPath: /shared-materials
@@ -252,8 +299,6 @@ spec:
         - name: htpasswd
           mountPath: /etc/nginx/.htpasswd
           subPath: .htpasswd
-        - name: entrypoint-scripts
-          mountPath: /docker-entrypoint.d
         - name: html-content
           mountPath: /usr/share/nginx/html
         - name: generated-configs
@@ -326,8 +371,6 @@ spec:
       - name: htpasswd
         secret:
           secretName: {{NAME}}-nginx-auth
-      - name: entrypoint-scripts
-        emptyDir: {}
       - name: generated-configs
         emptyDir: {}
       - name: html-content
