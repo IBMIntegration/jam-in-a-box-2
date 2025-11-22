@@ -1,3 +1,28 @@
+@import url("plex-fonts/plex.css");
+
+body {
+  font-family: 'IBM Plex Sans', Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+cds-header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.hero {
+  margin-top: 3rem;
+  height: 3rem;
+  .hero-content {
+    height: calc(100% + 12rem);
+    background-image: url('./hero.svg');
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-image: linear-gradient(to bottom, white 0%, transparent 2rem, white 100%), url('./hero.svg');
+    filter: blur(1px);
+  }
+}
 
 :root {
   --main-bg-color: #ffffff;
@@ -10,74 +35,34 @@
   --button-bg: #0043ce;
   --button-bg-disabled: #697077;
 
-  --left-panel-width: 32rem;
-  --right-panel-width: 15rem;
-  --total-width: 49rem;
+  --cds-grid-columns: 8
 }
 
 body {
-  padding: 1rem;
   font-size: 10pt;
   font-family: IBM Plex Sans, Helvetica, Arial, sans-serif;
+  margin: 0;
 }
 
-div.content {
-  width: var(--total-width);
-  position: relative;
-  margin: 0 auto;
-}
-
-div.left-panel {
-  width: var(--left-panel-width);
-  position: absolute;
-  left: 0;
-}
-div.right-panel {
-  width: var(--right-panel-width);
-  position: absolute;
-  right: 0;
-  top: 0.5rem;
-  min-height: 10rem;
+cds-tile {
   background-color: var(--section-bg-color);
-}
-
-div.form-section:empty,
-div.response-section:empty {
-  display: none;
-}
-
-div.form-section,
-div.response-section {
-  width: calc(var(--left-panel-width) - 1rem);
-  position: relative;
-  margin: 0.5rem auto;
-}
-div.links {
-  width: calc(var(--right-panel-width) - 2rem);
-  position: relative;
-  margin: 0.5rem auto;
-}
-h1 {
-  width: var(--total-width);
-  margin: 0.5rem auto;
-  position: relative;
-  padding: 1rem 0;
-}
-div.form-section,
-div.response-section,
-div.links {
-  padding: 0.5rem 1rem;
-  background-color: var(--section-bg-color);
-  .link-groups {
-    ul {
-      list-style: none;
-      padding-inline-start: 0;
-      li {
-        margin-bottom: 0.32rem;
-      }
+  margin: 1rem;
+  padding: 1rem;
+  ul {
+    list-style: none;
+    padding-inline-start: 0;
+    li {
+      margin-bottom: 0.32rem;
     }
   }
-  .more-info {
+}
+
+cds-tile#lab-materials {
+  background-color: #d0e2ff;
+}
+
+cds-tile#services-tile {
+  .link-groups ul li .more-info {
     font-size: 0.75em;
     position: relative;
     margin-top: 0.25em;    
@@ -113,111 +98,6 @@ div.links {
   }
 }
 
-.form-section,
-.form-section .field-wrapper {
-  label {
-    display: inline-block;
-    width: 36%;
-  }
-  select, input {
-    width: 60%;
-  }
+.rest-client {
+  display: none;
 }
-
-.highlight {
-  font-weight: bold;
-}
-
-button.major {
-  background-color: var(--button-bg);
-  color: white;
-  border: none;
-  padding: 0.5rem 2rem 0.5rem 1rem;
-}
-button.major:active {
-  background-color: var(--button-bg-active);
-}
-button.major:disabled {
-  background-color: var(--button-bg-disabled);
-}
-textarea {
-  width: 100%;
-  height: 5rem;
-}
-
-div.error {
-  background-color: var(--error-bg-color);
-  border: 1px solid var(--error-border-color);
-  position: relative;
-  button.x {
-    background-color: transparent;
-    border: none;
-    position: absolute;
-    padding-right: 1rem;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    text-align: center;
-    vertical-align: middle;
-    color: var(--error-border-color);
-  }
-  button.x:active {
-    background-color: #00000010;
-  }
-}
-button.x {
-  border: 1px solid var(--button-bg);
-  background-color: white;
-  position: absolute;
-  padding-right: 1rem;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  text-align: center;
-  vertical-align: middle;
-  color: var(--button-bg);
-}
-button.x:active {
-  border-color: var(--button-bg-active);
-  color: var(--button-bg-active);
-}
-
-div#host-selector #host-selected {
-  margin: 0.5rem 0 0;
-  font-size: 6pt;
-}
-
-.field-wrapper {
-  margin: 0.5rem 0;
-}
-.field-wrapper:first {
-  margin-top: 1rem;
-}
-.header-field-wrapper input {
-  width: calc(100% - 3.3rem) !important;
-}
-.header-field-wrapper button {
-  position: relative;
-  top: -1px;
-}
-
-div#send {
-  button {
-    position: relative;
-    right: 0;
-  }
-  .anxiety-killer {
-    display: inline-block;
-    margin: 0 0 0 1rem;
-  }
-}
-
-p.error {
-  color: var(--error-text-color);
-}
-
-.response-section div.header .key {
-  font-weight: bold;
-}
-
-

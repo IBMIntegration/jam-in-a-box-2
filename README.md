@@ -3,7 +3,7 @@
 
 ## Getting Started
 
-1. Set up your IBM Tech Zone environment at IBM Technology Zone. Please note that once you have reserved your environment, it'll take about two hours to provision it.
+1. Set up your IBM Tech Zone environment at IBM Technology Zone. Please note that once you have reserved your environment, it can take 2-3 hours to provision it.
 
     1. Access the collection "[Cloud Pak for Integration SC2 & CD Demo Environments](https://techzone.ibm.com/collection/674eb0d582e9ed71ce38688b)". You may need to log into IBM Technology Zone using your w3id or IBMid.
     1. Click on the button at the bottom of the environment called **CP4I on OCP-V (2.0)**.
@@ -69,5 +69,12 @@
         ```
 
 1. Download and install the Jam-in-a-Box tooling and materials.
+
+    ```sh
+    # Basic usage (no parameters)
+    oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+    ```
+
+1. Get the URL and credentials for the jam-in-a-box app.
 
     TODOC

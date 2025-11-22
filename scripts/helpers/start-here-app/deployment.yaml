@@ -25,6 +25,11 @@ data:
         root /usr/share/nginx/html;
         index index.html;
         
+        # Enable Server Side Includes for HTML files
+        ssi on;
+        ssi_silent_errors off;
+        ssi_types text/shtml;
+        
         # Disable script execution
         location ~* \.(php|pl|py|jsp|asp|sh|cgi)$ {
           return 403;
@@ -48,18 +53,26 @@ data:
           proxy_set_header X-Forwarded-Proto \$scheme;
         }
         
+        # Proxy ALL /tracks requests to md-handler (higher priority than HTML regex)
+        location /tracks {
+          auth_basic "Restricted Area";
+          proxy_pass http://localhost:8081;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # Handle HTML files with SSI enabled (but exclude /tracks paths)
+        location ~ ^(?!/tracks).*\.html$ {
+          ssi on;
+          auth_basic "Restricted Area";
+        }
+        
         # Everything else requires auth (including index.html)
         location / {
           auth_basic "Restricted Area";
           try_files $uri $uri/ /404.html;
-
-          location /tracks {
-            proxy_pass http://{{NAME}}-md-handler.{{NAMESPACE}}.svc.cluster.local:8081;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-          }
 
           # Only serve index.html for root path
           location = / {
@@ -110,7 +123,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jb-start-here
+  name: jam-in-a-box
   namespace: {{NAMESPACE}}
   labels:
     app: {{LABEL_APP}}
@@ -125,23 +138,95 @@ spec:
         app: {{LABEL_APP}}
     spec:
       initContainers:
+      - name: htdocs-fetcher
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "=== Htdocs Fetcher Init Container ==="
+          echo "Installing required tools..."
+          apk add --no-cache git
+          echo "Cloning repository to get htdocs content..."
+          git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
+          echo "Repository cloned successfully. Checking for htdocs..."
+          echo "Repository structure:"
+          ls -la /tmp/repo/
+          echo "Start-here-app directory:"
+          ls -la /tmp/repo/scripts/helpers/start-here-app/ || echo "start-here-app directory not found"
+          
+          if [ -d "/tmp/repo/scripts/helpers/start-here-app/htdocs" ]; then
+            echo "Found htdocs directory, showing contents:"
+            ls -la /tmp/repo/scripts/helpers/start-here-app/htdocs/
+            echo "Copying content to shared volume..."
+            
+            # Ensure target directory exists
+            mkdir -p /shared-htdocs
+            
+            # Copy all content
+            if cp -r /tmp/repo/scripts/helpers/start-here-app/htdocs/* /shared-htdocs/ 2>/dev/null; then
+              echo "Content copied successfully"
+            else
+              echo "Copy command failed or no files to copy"
+            fi
+            
+            # Show what we have now
+            echo "Final htdocs contents:"
+            ls -la /shared-htdocs/ || echo "No files in shared htdocs"
+            
+          else
+            echo "Htdocs directory not found at expected location"
+            echo "Available directories in scripts/helpers/:"
+            ls -la /tmp/repo/scripts/helpers/ || echo "helpers directory not found"
+          fi
+          
+          # Always create a basic index if nothing exists
+          if [ ! -f "/shared-htdocs/index.html" ]; then
+            echo "Creating fallback index.html..."
+            mkdir -p /shared-htdocs
+            cat > /shared-htdocs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Start Here App - Debug</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 50px; }
+                  .container { max-width: 800px; margin: 0 auto; }
+                  .warning { background: #fff3cd; padding: 15px; border-radius: 5px; }
+                  .debug { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>Start Here App - Debug Mode</h1>
+                  <div class="warning">
+                      <h3>⚠️ No Content Directory Found</h3>
+                      <p>The htdocs directory was not found in the repository.</p>
+                      <p>Expected location: <code>scripts/helpers/start-here-app/htdocs/</code></p>
+                  </div>
+                  <div class="debug">
+                      <h3>Debug Information</h3>
+                      <p>This page was generated because no htdocs directory was found.</p>
+                      <p>Repository: {{REPO_GIT_URL}}</p>
+                      <p>Branch: {{GIT_BRANCH}}</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+            echo "Created fallback index.html"
+          fi
+          echo "=== Htdocs fetcher completed ==="
+        volumeMounts:
+        - name: html-content
+          mountPath: /shared-htdocs
       - name: setup
         image: registry.redhat.io/ubi8/nodejs-20:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
-          echo "Copying entrypoint scripts..."
-          cp /scripts-src/* /scripts-dest/
-          chmod +x /scripts-dest/*
-          echo "Scripts copied and made executable:"
-          ls -la /scripts-dest/
           echo "Running config generator script..."
           node /scripts-init/config-generator.js
         volumeMounts:
-        - name: scripts-source
-          mountPath: /scripts-src
-        - name: entrypoint-scripts
-          mountPath: /scripts-dest
         - name: setup-config
           mountPath: /scripts-init
         - name: setup-output-config
@@ -152,6 +237,56 @@ spec:
           subPath: secret.json
         - name: generated-configs
           mountPath: /config/generated
+      - name: fetch-materials
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "=== Materials Fetcher Init Container ==="
+          echo "Installing required tools..."
+          apk add --no-cache curl tar wget git
+          echo "Attempting to download materials archive..."
+          ARCHIVE_URL="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}/archives/materials.tar.gz"
+          echo "Fetching archive from: ${ARCHIVE_URL}"
+          
+          # Try wget first, then curl
+          DOWNLOAD_SUCCESS=false
+          if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}" 2>/dev/null; then
+            echo "Archive downloaded successfully with wget"
+            DOWNLOAD_SUCCESS=true
+          elif curl -L -o /tmp/materials.tar.gz "${ARCHIVE_URL}" 2>/dev/null; then
+            echo "Archive downloaded successfully with curl"
+            DOWNLOAD_SUCCESS=true
+          fi
+          
+          if [ "$DOWNLOAD_SUCCESS" = "true" ] && [ -f "/tmp/materials.tar.gz" ]; then
+            echo "Extracting materials to shared volume..."
+            cd /shared-materials
+            if tar -xzf /tmp/materials.tar.gz --strip-components=1 2>/dev/null; then
+              echo "Materials extracted successfully"
+              ls -la /shared-materials/
+            else
+              echo "Failed to extract archive, trying without strip-components"
+              tar -xzf /tmp/materials.tar.gz 2>/dev/null || echo "Extraction failed completely"
+              ls -la /shared-materials/
+            fi
+          else
+            echo "Failed to download materials archive, trying direct git clone..."
+            git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
+            if [ -d "/tmp/repo/materials" ]; then
+              echo "Found materials directory in repo, copying..."
+              cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
+            else
+              echo "No materials directory found, creating fallback..."
+              mkdir -p /shared-materials/tracks
+              echo "# Materials" > /shared-materials/tracks/index.md
+              echo "Materials not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
+            fi
+          fi
+          echo "=== Materials fetcher completed ==="
+        volumeMounts:
+        - name: materials-volume
+          mountPath: /shared-materials
       containers:
       - name: nginx
         image: nginx:alpine
@@ -164,10 +299,6 @@ spec:
         - name: htpasswd
           mountPath: /etc/nginx/.htpasswd
           subPath: .htpasswd
-        - name: entrypoint-scripts
-          mountPath: /docker-entrypoint.d
-        - name: htdocs-archive
-          mountPath: /archive
         - name: html-content
           mountPath: /usr/share/nginx/html
         - name: generated-configs
@@ -184,99 +315,9 @@ spec:
         volumeMounts:
         - name: rest-proxy-script
           mountPath: /app
-      volumes:
-      - name: nginx-config
-        configMap:
-          name: {{NAME}}-nginx-config
-      - name: htpasswd
-        secret:
-          secretName: {{NAME}}-nginx-auth
-      - name: scripts-source
-        configMap:
-          name: {{NAME}}-scripts
-      - name: entrypoint-scripts
-        emptyDir: {}
-      - name: generated-configs
-        emptyDir: {}
-      - name: htdocs-archive
-        configMap:
-          name: {{NAME}}-htdocs
-      - name: html-content
-        emptyDir: {}
-      - name: setup-config
-        configMap:
-          name: {{NAME}}-scripts-init
-      - name: setup-output-config
-        configMap:
-          name: jb-setup-output
-      - name: setup-secrets
-        secret:
-          secretName: jb-setup-secrets
-      - name: nginx-cache
-        emptyDir: {}
-      - name: runtime-data
-        emptyDir: {}
-      - name: rest-proxy-script
-        configMap:
-          name: {{NAME}}-rest-proxy
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{NAME}}-md-handler
-  namespace: {{NAMESPACE}}
-  labels:
-    app: {{LABEL_APP}}
-    component: md-handler
-  annotations:
-    # Enable automatic updates when ImageStream changes
-    image.openshift.io/triggers: |
-      [{"from":{"kind":"ImageStreamTag","name":"md-handler:latest"},"fieldPath":"spec.template.spec.containers[0].image"}]
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{LABEL_APP}}
-      component: md-handler
-  template:
-    metadata:
-      labels:
-        app: {{LABEL_APP}}
-        component: md-handler
-    spec:
-      initContainers:
-      - name: fetch-materials
-        image: alpine:latest
-        command: ["/bin/sh", "-c"]
-        args:
-        - |
-          echo "Installing required tools..."
-          apk add --no-cache curl tar
-          echo "Downloading materials archive from git repository..."
-          ARCHIVE_URL="https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/{{GIT_BRANCH}}/archives/materials.tar.gz"
-          echo "Fetching archive from: ${ARCHIVE_URL}"
-          if wget -O /tmp/materials.tar.gz "${ARCHIVE_URL}"; then
-                  echo "Archive downloaded successfully"
-            echo "Extracting materials to shared volume..."
-            cd /shared-materials
-            tar -xzf /tmp/materials.tar.gz --strip-components=1
-            echo "Materials extracted successfully"
-            ls -la /shared-materials/
-          else
-            echo "Failed to download materials archive"
-            echo "Falling back to downloading individual files..."
-            mkdir -p /shared-materials/tracks
-            # Create a basic index if archive is not available
-            echo "# Materials" > /shared-materials/tracks/index.md
-            echo "Materials archive not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
-          fi
-          echo "Init container completed"
-        volumeMounts:
-        - name: materials-volume
-          mountPath: /shared-materials
-      containers:
       - name: md-handler
-        image: md-handler:latest
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/md-handler:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8081
           name: http
@@ -300,6 +341,9 @@ spec:
           mountPath: /materials
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
+        - name: html-content
+          mountPath: /shared-includes
+          readOnly: true
         livenessProbe:
           httpGet:
             path: /health
@@ -321,6 +365,32 @@ spec:
             cpu: "500m"
         workingDir: /opt/app-root/src
       volumes:
+      - name: nginx-config
+        configMap:
+          name: {{NAME}}-nginx-config
+      - name: htpasswd
+        secret:
+          secretName: {{NAME}}-nginx-auth
+      - name: generated-configs
+        emptyDir: {}
+      - name: html-content
+        emptyDir: {}
+      - name: setup-config
+        configMap:
+          name: {{NAME}}-scripts-init
+      - name: setup-output-config
+        configMap:
+          name: jb-setup-output
+      - name: setup-secrets
+        secret:
+          secretName: jb-setup-secrets
+      - name: nginx-cache
+        emptyDir: {}
+      - name: runtime-data
+        emptyDir: {}
+      - name: rest-proxy-script
+        configMap:
+          name: {{NAME}}-rest-proxy
       - name: materials-volume
         emptyDir: {}
       - name: md-handler-config
@@ -341,48 +411,12 @@ spec:
     targetPort: {{PORT}}
     protocol: TCP
     name: nginx
-  selector:
-    app: {{LABEL_APP}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{NAME}}-md-handler
-  namespace: {{NAMESPACE}}
-  labels:
-    app: {{LABEL_APP}}
-    component: md-handler
-spec:
-  type: ClusterIP
-  ports:
   - port: 8081
     targetPort: 8081
     protocol: TCP
     name: md-handler
   selector:
     app: {{LABEL_APP}}
-    component: md-handler
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{NAME}}-md-handler-admin
-  namespace: {{NAMESPACE}}
-  labels:
-    app: {{LABEL_APP}}
-    component: md-handler
-    service-type: admin
-spec:
-  type: ClusterIP
-  clusterIP: None
-  ports:
-  - port: 8082
-    targetPort: 8082
-    protocol: TCP
-    name: admin
-  selector:
-    app: {{LABEL_APP}}
-    component: md-handler
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -412,7 +446,7 @@ metadata:
 spec:
   to:
     kind: Service
-    name: {{NAME}}-md-handler
+    name: {{NAME}}
   port:
     targetPort: 8081
   tls:

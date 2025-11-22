@@ -1,0 +1,78 @@
+<!-- Image modal for lightbox -->
+<div id="imageModal" class="image-modal">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="modalImage" alt="expanded image"/>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Image handling initialization
+        initializeImageHandling();
+    });
+    
+    function initializeImageHandling() {
+        // Constrain all images to container width
+        $('img').each(function() {
+            const $img = $(this);
+            
+            // Set max-width constraint
+            $img.css({
+                'max-width': '100%',
+                'height': 'auto'
+            });
+            
+            // Add click event for lightbox
+            $img.on('click', function(e) {
+                e.preventDefault();
+                openImageModal(this.src, this.alt);
+            });
+            
+            // Add error handling
+            $img.on('error', function() {
+                $(this).attr('alt', 'Image failed to load: ' + this.src);
+                console.warn('Failed to load image:', this.src);
+            });
+            
+            // Add loading indicator
+            $img.on('load', function() {
+                $(this).addClass('loaded');
+            });
+        });
+        
+        // Modal close events
+        $('.close-modal, #imageModal').on('click', function() {
+            closeImageModal();
+        });
+        
+        // Click anywhere in modal to close (including the image)
+        $('#modalImage').on('click', function() {
+            closeImageModal();
+        });
+        
+        // Keyboard support
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    }
+    
+    function openImageModal(src, alt) {
+        const $modal = $('#imageModal');
+        const $modalImg = $('#modalImage');
+        
+        $modalImg.attr('src', src).attr('alt', alt || '');
+        $modal.addClass('show');
+        
+        // Prevent body scroll
+        $('body').css('overflow', 'hidden');
+    }
+    
+    function closeImageModal() {
+        const $modal = $('#imageModal');
+        $modal.removeClass('show');
+        
+        // Restore body scroll
+        $('body').css('overflow', '');
+    }
+</script>

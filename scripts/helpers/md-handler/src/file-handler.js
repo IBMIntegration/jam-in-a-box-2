@@ -2,9 +2,29 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import MarkdownIt from 'markdown-it';
-import { type } from 'os';
 // TOC plugin for automatic table of contents
 import markdownItTocDoneRight from 'markdown-it-toc-done-right';
+
+const INCLUDES_DIR = path.join('/shared-includes', 'includes');
+const INCLUDES = ['header', 'footer', 'head', 'image-modal'];
+
+/**
+ * Reads a file from the include directory
+ * @param {string} filename the name of the file without the `.html` extension
+ * @returns {Promise<string>} the content of the include file
+ */
+async function includeHtml(filename) {
+  if (!INCLUDES.includes(filename)) {
+    throw new Error(`Include file "${filename}" is not recognized.`);
+  }
+  const filePath = path.join(INCLUDES_DIR, filename+'.html');
+  try {
+    return await fs.readFile(filePath, 'utf-8');
+  } catch (error) {
+    throw new Error(`Failed to read include file "${filename}": ${error.message}`);
+  }
+}
+
 
 // Initialize markdown-it with default options
 const md = new MarkdownIt({
@@ -295,7 +315,9 @@ export async function resolveFile(requestPath, basePath) {
             const markdownContent = await fs.readFile(markdownPath, 'utf8');
             // Process template variables before converting to HTML
             const processedMarkdown = parseTemplateVariables(markdownContent);
-            const htmlContent = convertMarkdownToHtml(processedMarkdown, path.basename(markdownPath, '.md'));
+            const htmlContent = await convertMarkdownToHtml(
+              processedMarkdown, path.basename(markdownPath, '.md')
+            );
             
             return {
               status: 200,
@@ -335,263 +357,31 @@ export async function resolveFile(requestPath, basePath) {
  * @param {string} title - The title for the HTML page
  * @returns {string} Complete HTML document
  */
-function convertMarkdownToHtml(markdownContent, title = 'Document') {
+async function convertMarkdownToHtml(markdownContent, title = 'Document') {
   const htmlBody = md.render(markdownContent);
   
+  // load these in parallel
+  const neededIncludesPromises = {
+    head: includeHtml('head'),
+    header: includeHtml('header'),
+    footer: includeHtml('footer'),
+    imageModal: includeHtml('image-modal')
+  };
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            color: #333;
-        }
-        pre {
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-        code {
-            background: #f4f4f4;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: Monaco, 'Courier New', monospace;
-        }
-        blockquote {
-            border-left: 4px solid #ddd;
-            margin: 0;
-            padding-left: 20px;
-            color: #666;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .failed-substitution {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: bold;
-            border: 1px solid #ef5350;
-        }
-        /* Table of Contents styling */
-        .table-of-contents {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            font-size: 0.95em;
-        }
-        .table-of-contents::before {
-            content: "Table of Contents";
-            display: block;
-            font-weight: bold;
-            font-size: 1.1em;
-            color: #495057;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #dee2e6;
-        }
-        .toc-list {
-            margin: 0;
-            padding-left: 0;
-            list-style: none;
-        }
-        .toc-list .toc-list {
-            padding-left: 20px;
-            margin-top: 5px;
-        }
-        .toc-item {
-            margin: 8px 0;
-            line-height: 1.4;
-        }
-        .toc-link {
-            text-decoration: none;
-            color: #007bff;
-            display: block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-        }
-        .toc-link:hover {
-            background-color: #e3f2fd;
-            color: #0056b3;
-            text-decoration: none;
-        }
-        /* Heading anchor links */
-        h1:hover .header-anchor,
-        h2:hover .header-anchor,
-        h3:hover .header-anchor,
-        h4:hover .header-anchor,
-        h5:hover .header-anchor,
-        h6:hover .header-anchor {
-            opacity: 1;
-        }
-        .header-anchor {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            margin-left: 8px;
-            text-decoration: none;
-            color: #6c757d;
-        }
-        .header-anchor:hover {
-            color: #007bff;
-        }
-        /* Image styling */
-        img {
-            max-width: 100%;
-            height: auto;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-        }
-        img:hover {
-            opacity: 0.8;
-        }
-        /* Modal styles for image lightbox */
-        .image-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            padding: 2em;
-            box-sizing: border-box;
-        }
-        .image-modal.show {
-            display: flex;
-        }
-        .modal-content {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            cursor: pointer;
-        }
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 35px;
-            color: #fff;
-            font-size: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 1001;
-            user-select: none;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-        .close-modal:hover {
-            color: #ccc;
-        }
-    </style>
-    <!-- jQuery CDN -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" 
-            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" 
-            crossorigin="anonymous"></script>
+  ${await neededIncludesPromises.head}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <link rel="stylesheet" type="text/css" href="/public/markdown-it.css">
 </head>
 <body>
-    ${htmlBody}
-    
-    <!-- Image modal for lightbox -->
-    <div id="imageModal" class="image-modal">
-        <span class="close-modal">&times;</span>
-        <img class="modal-content" id="modalImage">
-    </div>
-    
-    <script>
-        $(document).ready(function() {
-            // Image handling initialization
-            initializeImageHandling();
-        });
-        
-        function initializeImageHandling() {
-            // Constrain all images to container width
-            $('img').each(function() {
-                const $img = $(this);
-                
-                // Set max-width constraint
-                $img.css({
-                    'max-width': '100%',
-                    'height': 'auto'
-                });
-                
-                // Add click event for lightbox
-                $img.on('click', function(e) {
-                    e.preventDefault();
-                    openImageModal(this.src, this.alt);
-                });
-                
-                // Add error handling
-                $img.on('error', function() {
-                    $(this).attr('alt', 'Image failed to load: ' + this.src);
-                    console.warn('Failed to load image:', this.src);
-                });
-                
-                // Add loading indicator
-                $img.on('load', function() {
-                    $(this).addClass('loaded');
-                });
-            });
-            
-            // Modal close events
-            $('.close-modal, #imageModal').on('click', function() {
-                closeImageModal();
-            });
-            
-            // Click anywhere in modal to close (including the image)
-            $('#modalImage').on('click', function() {
-                closeImageModal();
-            });
-            
-            // Keyboard support
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeImageModal();
-                }
-            });
-        }
-        
-        function openImageModal(src, alt) {
-            const $modal = $('#imageModal');
-            const $modalImg = $('#modalImage');
-            
-            $modalImg.attr('src', src).attr('alt', alt || '');
-            $modal.addClass('show');
-            
-            // Prevent body scroll
-            $('body').css('overflow', 'hidden');
-        }
-        
-        function closeImageModal() {
-            const $modal = $('#imageModal');
-            $modal.removeClass('show');
-            
-            // Restore body scroll
-            $('body').css('overflow', '');
-        }
-    </script>
+  ${await neededIncludesPromises.header}
+  ${htmlBody}
+  ${await neededIncludesPromises.footer}
+  ${await neededIncludesPromises.imageModal}
 </body>
 </html>`;
 }

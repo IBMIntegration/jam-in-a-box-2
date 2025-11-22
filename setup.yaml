@@ -1,0 +1,321 @@
+---
+# Integration Jam-in-a-Box One-Line Setup
+# Usage: oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+#
+# This will:
+# 1. Create necessary namespaces
+# 2. Set up privileged service account
+# 3. Clone the repository
+# 4. Run main.sh to set up the entire environment
+#
+# Optional: Create a ConfigMap named 'jam-setup-params' in the default namespace 
+# to customize parameters. Example:
+#   oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary"
+
+# Create jam-in-a-box namespace if it doesn't exist
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jam-in-a-box
+---
+# ServiceAccount with cluster admin privileges for setup
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jam-setup-sa
+  namespace: jam-in-a-box
+---
+# ClusterRoleBinding to give the service account cluster-admin privileges
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jam-setup-cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: jam-setup-sa
+  namespace: jam-in-a-box
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Main setup pod with init container for git clone
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jam-setup-pod
+  namespace: jam-in-a-box
+  labels:
+    app: jam-setup
+spec:
+  serviceAccount: jam-setup-sa
+  restartPolicy: Never
+  
+  # Shared volume for git repository
+  volumes:
+  - name: repo-volume
+    emptyDir: {}
+  
+  # Main container to run setup
+  containers:
+  - name: jam-setup
+    image: registry.redhat.io/ubi8/nodejs-20:latest
+    workingDir: /workspace
+    volumeMounts:
+    - name: repo-volume
+      mountPath: /workspace
+    
+    # Set up environment
+    env:
+    - name: HOME
+      value: "/tmp"
+    
+    command: ["/bin/bash", "-c"]
+    args:
+    - |
+      echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
+      
+      # Install required tools
+      echo "Installing required tools..."
+      echo "Available repositories:"
+      microdnf repolist
+      echo "Attempting to install packages..."
+      microdnf install -y git openssl curl tar gzip findutils procps-ng
+      
+      # Try to install jq, with fallback if not available in microdnf repos
+      echo "Installing jq..."
+      if ! microdnf install -y jq 2>/dev/null; then
+        echo "jq not available in microdnf repos, installing from GitHub releases..."
+        curl -L "https://github.com/jqlang/jq/releases/latest/download/jq-linux64" -o /usr/local/bin/jq
+        chmod +x /usr/local/bin/jq
+        echo "jq installed from GitHub"
+      else
+        echo "jq installed via microdnf"
+      fi
+      
+      # Verify installations
+      echo "Verifying tool installations:"
+      which git && echo "✓ git installed"
+      which curl && echo "✓ curl installed"
+      which jq && echo "✓ jq installed"
+      
+      # Install kubectl (compatible with OpenShift)
+      echo "Installing kubectl..."
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      chmod +x kubectl
+      mv kubectl /usr/local/bin/
+      
+      # Install OpenShift CLI (oc) for OpenShift-specific commands like start-build
+      echo "Installing OpenShift CLI (oc)..."
+      # Try to get oc from the cluster's console-cli-downloads if available
+      if OC_URL=$(kubectl get route console -n openshift-console -o jsonpath='{.spec.host}' 2>/dev/null); then
+        echo "Attempting to download oc from cluster..."
+        curl -kL "https://$OC_URL/api/v1/namespaces/openshift-console/services/downloads/proxy/linux/oc.tar" -o oc.tar 2>/dev/null || echo "Cluster download failed, trying GitHub..."
+        if [ -f oc.tar ] && tar -tf oc.tar >/dev/null 2>&1; then
+          tar -xf oc.tar && mv oc /usr/local/bin/ && rm oc.tar
+          echo "✓ oc installed from cluster"
+        else
+          rm -f oc.tar
+          echo "Downloading oc from GitHub..."
+          curl -L "https://github.com/openshift/okd/releases/download/4.14.0-0.okd-2023-12-01-225814/openshift-client-linux-4.14.0-0.okd-2023-12-01-225814.tar.gz" | tar -xzf - oc
+          mv oc /usr/local/bin/
+          echo "✓ oc installed from GitHub"
+        fi
+      else
+        echo "Downloading oc from GitHub..."
+        curl -L "https://github.com/openshift/okd/releases/download/4.14.0-0.okd-2023-12-01-225814/openshift-client-linux-4.14.0-0.okd-2023-12-01-225814.tar.gz" | tar -xzf - oc
+        mv oc /usr/local/bin/
+        echo "✓ oc installed from GitHub"
+      fi
+      
+      # Configure kubectl/oc to use the ServiceAccount token
+      echo "Configuring OpenShift CLI authentication..."
+      export KUBECONFIG=/tmp/kubeconfig
+      kubectl config set-cluster kubernetes --server=https://kubernetes.default.svc --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      kubectl config set-credentials serviceaccount --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      kubectl config set-context default --cluster=kubernetes --user=serviceaccount --namespace=jam-in-a-box
+      kubectl config use-context default
+      
+      # Define retry function for resilient API calls
+      retry_command() {
+        local max_attempts=5
+        local delay=10
+        local attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if "$@" 2>/dev/null; then
+            return 0
+          elif [[ $? -eq 130 ]]; then
+            echo "Command interrupted, stopping retries"
+            return 130
+          else
+            echo "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..."
+            sleep $delay
+            attempt=$((attempt + 1))
+          fi
+        done
+        echo "All $max_attempts attempts failed"
+        return 1
+      }
+      
+      # Make KUBECONFIG and retry function available to main.sh
+      echo "export KUBECONFIG=/tmp/kubeconfig" >> /tmp/env_setup
+      echo "export PATH=/usr/local/bin:\$PATH" >> /tmp/env_setup
+      
+      # Add the retry function to env_setup for main.sh
+      cat >> /tmp/env_setup << 'EOF'
+      retry_command() {
+        local max_attempts=5
+        local delay=10
+        local attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if "$@" 2>/dev/null; then
+            return 0
+          elif [[ $? -eq 130 ]]; then
+            echo "Command interrupted, stopping retries"
+            return 130
+          else
+            echo "Attempt $attempt/$max_attempts failed, retrying in ${delay}s..."
+            sleep $delay
+            attempt=$((attempt + 1))
+          fi
+        done
+        echo "All $max_attempts attempts failed"
+        return 1
+      }
+      EOF
+      
+      # Verify authentication
+      echo "Verifying OpenShift authentication..."
+      kubectl auth can-i get pods --namespace=jam-in-a-box
+      if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to authenticate with OpenShift"
+        exit 1
+      fi
+      echo "Authentication successful!"
+      
+      # Check and wait for registry to be ready
+      echo "Checking OpenShift image registry state..."
+      REGISTRY_STATE=""
+      for i in {1..30}; do
+        # Use retry logic for registry state check
+        REGISTRY_STATE=$(retry_command kubectl get config.imageregistry.operator.openshift.io/cluster -o jsonpath='{.spec.managementState}' || echo "Unknown")
+        if [ "$REGISTRY_STATE" = "Managed" ]; then
+          echo "✓ Registry is in Managed state"
+          break
+        else
+          echo "Registry state: $REGISTRY_STATE (attempt $i/30)"
+          if [ "$REGISTRY_STATE" = "Removed" ]; then
+            echo "Attempting to set registry to Managed state..."
+            retry_command kubectl patch config.imageregistry.operator.openshift.io/cluster --type merge -p '{"spec":{"managementState":"Managed"}}' || echo "Failed to patch registry state"
+          fi
+          sleep 10
+        fi
+      done
+      
+      if [ "$REGISTRY_STATE" != "Managed" ]; then
+        echo "⚠️  WARNING: Registry state is still $REGISTRY_STATE after 5 minutes"
+        echo "This may cause build failures, but continuing setup..."
+      fi
+      
+      # Wait a bit more for the registry to stabilize after state changes
+      echo "Waiting for registry to stabilize..."
+      sleep 30
+      
+      # Test kubectl command specifically
+      echo "Testing kubectl command..."
+      kubectl version --client
+      kubectl auth whoami 2>/dev/null || echo "ServiceAccount authentication active"
+      
+      # Check for optional parameters ConfigMap first
+      echo "Checking for custom parameters..."
+      PARAMETERS=""
+      if kubectl get configmap jam-setup-params -n default 2>/dev/null; then
+        echo "Found custom parameters ConfigMap"
+        PARAMETERS=$(kubectl get configmap jam-setup-params -n default -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+      else
+        echo "No custom parameters found, using defaults"
+      fi
+      
+      echo "Parameters to use: ${PARAMETERS:-'(none)'}"
+      
+      # Determine which branch to clone based on parameters
+      BRANCH="main"
+      if [[ "$PARAMETERS" == *"--canary"* ]]; then
+        BRANCH="canary"
+        echo "Using canary branch based on --canary parameter"
+      else
+        echo "Using main branch (default)"
+      fi
+      
+      # Clone the repository with the determined branch
+      echo "Cloning repository from branch: $BRANCH"
+      git clone -b $BRANCH https://github.com/capnajax/integration-jam-in-a-box.git .
+      
+      echo "Repository cloned successfully. Contents:"
+      ls -la
+      
+      # Make scripts executable
+      echo "Setting up permissions..."
+      find . -name "*.sh" -exec chmod +x {} \;
+      chmod +x main.sh
+      
+      # Run the main setup script
+      echo "Starting main setup process..."
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la
+      
+      if [ -f "./main.sh" ]; then
+        echo "Executing: ./main.sh ${PARAMETERS}"
+        # Source the environment setup to ensure KUBECONFIG is available
+        source /tmp/env_setup
+        
+        # Debug: Show current authentication status before running main.sh
+        echo "Debug: Current authentication status:"
+        echo "KUBECONFIG=$KUBECONFIG"
+        retry_command kubectl auth whoami 2>/dev/null || echo "Using ServiceAccount token authentication"
+        retry_command kubectl get pods --namespace=jam-in-a-box --limit=1 >/dev/null 2>&1 && echo "OpenShift access confirmed" || echo "OpenShift access failed"
+        
+        ./main.sh ${PARAMETERS}
+        SETUP_EXIT_CODE=$?
+        
+        if [ $SETUP_EXIT_CODE -eq 0 ]; then
+          echo "=== Setup completed successfully! ==="
+        else
+          echo "=== Setup failed with exit code: $SETUP_EXIT_CODE ==="
+        fi
+      else
+        echo "ERROR: main.sh not found in cloned repository"
+        ls -la
+        exit 1
+      fi
+      
+      # Keep container running for debugging/testing
+      echo "Setup phase complete. Container will remain running for inspection."
+      echo "You can exec into this pod to test changes or debug issues:"
+      echo "  oc exec -it jam-setup-pod -n jam-in-a-box -- /bin/bash"
+      echo ""
+      echo "To clean up when done:"
+      echo "  oc delete pod jam-setup-pod -n jam-in-a-box"
+      echo "  oc delete clusterrolebinding jam-setup-cluster-admin"
+      echo "  oc delete serviceaccount jam-setup-sa -n jam-in-a-box"
+      echo "  oc delete namespace jam-in-a-box"
+      
+      # Sleep to keep container alive
+      while true; do
+        sleep 3600
+      done
+    
+    # Security context for privileged operations
+    securityContext:
+      privileged: true
+      runAsUser: 0
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"

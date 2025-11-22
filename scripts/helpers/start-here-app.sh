@@ -3,13 +3,15 @@
 # =============================================================================
 # Configuration and Global Variables
 # =============================================================================
-
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LABEL_APP="jb-start-here"
 LABEL="app=${LABEL_APP}"
 NAMESPACE="jam-in-a-box"
 GIT_BRANCH="main"
 LAST_BUILD_NAME=""
 ROUTE_BASENAME="integration"
+
+DEBUG=true
 
 ## 
 # This is a one-touch deployment script for a jam-in-a-box educational
@@ -344,6 +346,10 @@ function applyBuildConfiguration() {
   local appName="$1"
   local yamlFile="$2" 
   local buildYaml
+  local repoGitUrl
+  
+  repoGitUrl=$(jq -r '.template_vars.REPO_GIT_URL' \
+    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   log_subheader "Applying build configuration for $appName"
   
@@ -351,10 +357,12 @@ function applyBuildConfiguration() {
   log_debug "Using namespace: $NAMESPACE"
   log_debug "Using Git branch: $GIT_BRANCH"
   
-  buildYaml=$(sed -e "s/{{NAME}}/$appName/g" \
-      -e "s/{{NAMESPACE}}/$NAMESPACE/g" \
-      -e "s/{{GIT_BRANCH}}/$GIT_BRANCH/g" \
-      "$yamlFile")
+  # Use safe bash string replacement instead of sed to avoid delimiter conflicts
+  buildYaml=$(cat "$yamlFile")
+  buildYaml="${buildYaml//\{\{NAME\}\}/$appName}"
+  buildYaml="${buildYaml//\{\{NAMESPACE\}\}/$NAMESPACE}"
+  buildYaml="${buildYaml//\{\{GIT_BRANCH\}\}/$GIT_BRANCH}"
+  buildYaml="${buildYaml//\{\{REPO_GIT_URL\}\}/$repoGitUrl}"
   
   if ! echo "$buildYaml" | oc apply -f -; then
     log_error "Failed to apply build configuration"
@@ -930,27 +938,7 @@ function createRestProxyConfigMap() {
     oc apply -f -
 }
 
-function createHtdocsConfigMap() {
-  local NAME="$1"
-  local htdocsDir baseDir
-  
-  baseDir="$(dirname "$0")/start-here-app"
-  htdocsDir="$baseDir/htdocs"
-  
-  if [[ -d "$htdocsDir" ]]; then
-    log_info "Creating htdocs archive..."
-    (cd "$(dirname "$htdocsDir")" && COPYFILE_DISABLE=1 tar czf - htdocs) | \
-    oc create configmap "${NAME}-htdocs" \
-      --namespace="$NAMESPACE" \
-      --from-file=htdocs.tar.gz=/dev/stdin \
-      --dry-run=client -o yaml | \
-      oc label --local -f - app="$LABEL_APP" -o yaml | \
-      oc apply -f -
-  else
-    log_error "htdocs directory not found at $htdocsDir"
-    return 1
-  fi
-}
+
 
 function createScriptsConfigMaps() {
   local NAME="$1"
@@ -960,14 +948,6 @@ function createScriptsConfigMaps() {
   
   log_debug "Creating scripts configmaps"
   
-  # Create extraction script configmap
-  oc create configmap "${NAME}-scripts" \
-    --namespace="$NAMESPACE" \
-    --from-file="$baseDir/extract-htdocs.sh" \
-    --dry-run=client -o yaml | \
-    oc label --local -f - app="$LABEL_APP" -o yaml | \
-    oc apply -f -
-
   # Create config generator script configmap
   oc create configmap "${NAME}-scripts-init" \
     --namespace="$NAMESPACE" \
@@ -1006,22 +986,31 @@ function applyMainDeployment() {
   local yamlFile="$6"
   local PORT="$7"
   local output remaining
+  local repoGitUrl repoRawBaseUrl
+
+  repoGitUrl=$(jq -r '.template_vars.REPO_GIT_URL' \
+    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  repoRawBaseUrl=$(jq -r '.template_vars.REPO_RAW_BASE_URL' \
+    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   log_debug "Processing deployment template: $yamlFile"
   
   # Apply template with substitutions
-  output=$(sed -e "s/{{NAME}}/$NAME/g" \
-      -e "s/{{NAMESPACE}}/$NAMESPACE/g" \
-      -e "s/{{USERNAME}}/$USERNAME/g" \
-      -e "s/{{ROUTE_BASENAME}}/$ROUTE_BASENAME/g" \
-      -e "s/{{USERNAME_BASE64}}/$USERNAME_BASE64/g" \
-      -e "s/{{PASSWORD}}/$PASSWORD/g" \
-      -e "s/{{PASSWORD_BASE64}}/$PASSWORD_BASE64/g" \
-      -e "s/{{LABEL_APP}}/$LABEL_APP/g" \
-      -e "s/{{APP}}/$NAME/g" \
-      -e "s/{{PORT}}/$PORT/g" \
-      -e "s/{{GIT_BRANCH}}/$GIT_BRANCH/g" \
-      "$yamlFile")
+  # Use safe bash string replacement instead of sed to avoid delimiter conflicts
+  output=$(cat "$yamlFile")
+  output="${output//\{\{NAME\}\}/$NAME}"
+  output="${output//\{\{NAMESPACE\}\}/$NAMESPACE}"
+  output="${output//\{\{USERNAME\}\}/$USERNAME}"
+  output="${output//\{\{ROUTE_BASENAME\}\}/$ROUTE_BASENAME}"
+  output="${output//\{\{USERNAME_BASE64\}\}/$USERNAME_BASE64}"
+  output="${output//\{\{PASSWORD\}\}/$PASSWORD}"
+  output="${output//\{\{PASSWORD_BASE64\}\}/$PASSWORD_BASE64}"
+  output="${output//\{\{LABEL_APP\}\}/$LABEL_APP}"
+  output="${output//\{\{APP\}\}/$NAME}"
+  output="${output//\{\{PORT\}\}/$PORT}"
+  output="${output//\{\{GIT_BRANCH\}\}/$GIT_BRANCH}"
+  output="${output//\{\{REPO_GIT_URL\}\}/$repoGitUrl}"
+  output="${output//\{\{REPO_RAW_BASE_URL\}\}/$repoRawBaseUrl}"
 
   # Check for any remaining {{}} variables
   remaining=$(echo "$output" | grep -o '{{[^}]*}}' || true)
@@ -1063,12 +1052,6 @@ function setupNginxAndDeploy() {
   # Create rest-proxy configmap
   if ! createRestProxyConfigMap "$NAME"; then
     log_error "Failed to create rest-proxy configmap"
-    return 1
-  fi
-  
-  # Create htdocs configmap
-  if ! createHtdocsConfigMap "$NAME"; then
-    log_error "Failed to create htdocs configmap"
     return 1
   fi
   

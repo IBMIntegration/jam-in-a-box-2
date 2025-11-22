@@ -1,0 +1,6 @@
+{
+  "template_vars": {
+    "REPO_GIT_URL": "https://github.com/capnajax/integration-jam-in-a-box.git",
+    "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box"
+  }
+}
