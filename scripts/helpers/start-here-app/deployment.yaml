@@ -146,12 +146,13 @@ spec:
           set -e
           echo "=== Htdocs Fetcher Init Container ==="
           echo "Downloading repository archive..."
-          REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.tar.gz"
+          REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.zip"
           echo "Archive URL: ${REPO_ARCHIVE}"
-          curl -L -o /tmp/repo.tar.gz "${REPO_ARCHIVE}" || { echo "Failed to download archive"; exit 1; }
+          curl -L -o /tmp/repo.zip "${REPO_ARCHIVE}" || { echo "Failed to download archive"; exit 1; }
           echo "Extracting archive..."
           mkdir -p /tmp/repo
-          tar -xzf /tmp/repo.tar.gz -C /tmp/repo --strip-components=1 || { echo "Failed to extract archive"; exit 1; }
+          unzip -q /tmp/repo.zip -d /tmp/extract || { echo "Failed to extract archive"; exit 1; }
+          mv /tmp/extract/*/* /tmp/repo/ 2>/dev/null || mv /tmp/extract/* /tmp/repo/
           echo "Repository extracted successfully. Checking for htdocs..."
           echo "Repository structure:"
           ls -la /tmp/repo/ 2>/dev/null || echo "No repo directory"
@@ -276,12 +277,13 @@ spec:
             fi
           else
             echo "Failed to download materials archive, trying full repository download..."
-            REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.tar.gz"
+            REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.zip"
             echo "Repository archive URL: ${REPO_ARCHIVE}"
-            if curl -L -o /tmp/repo.tar.gz "${REPO_ARCHIVE}" 2>/dev/null; then
+            if curl -L -o /tmp/repo.zip "${REPO_ARCHIVE}" 2>/dev/null; then
               echo "Repository archive downloaded, extracting..."
-              mkdir -p /tmp/repo
-              tar -xzf /tmp/repo.tar.gz -C /tmp/repo --strip-components=1 2>/dev/null || echo "Extraction failed"
+              mkdir -p /tmp/repo /tmp/extract
+              unzip -q /tmp/repo.zip -d /tmp/extract 2>/dev/null || echo "Extraction failed"
+              mv /tmp/extract/*/* /tmp/repo/ 2>/dev/null || mv /tmp/extract/* /tmp/repo/ 2>/dev/null || echo "Move failed"
               if [ -d "/tmp/repo/materials" ]; then
                 echo "Found materials directory in repo, copying..."
                 cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
