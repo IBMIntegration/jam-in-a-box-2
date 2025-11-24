@@ -139,20 +139,24 @@ spec:
     spec:
       initContainers:
       - name: htdocs-fetcher
-        image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+        image: registry.access.redhat.com/ubi8/ubi:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
+          set -e
           echo "=== Htdocs Fetcher Init Container ==="
-          echo "Installing required tools..."
-          microdnf install -y git-core && microdnf clean all
-          echo "Cloning repository to get htdocs content..."
-          git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
-          echo "Repository cloned successfully. Checking for htdocs..."
+          echo "Downloading repository archive..."
+          REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.tar.gz"
+          echo "Archive URL: ${REPO_ARCHIVE}"
+          curl -L -o /tmp/repo.tar.gz "${REPO_ARCHIVE}" || { echo "Failed to download archive"; exit 1; }
+          echo "Extracting archive..."
+          mkdir -p /tmp/repo
+          tar -xzf /tmp/repo.tar.gz -C /tmp/repo --strip-components=1 || { echo "Failed to extract archive"; exit 1; }
+          echo "Repository extracted successfully. Checking for htdocs..."
           echo "Repository structure:"
-          ls -la /tmp/repo/
+          ls -la /tmp/repo/ 2>/dev/null || echo "No repo directory"
           echo "Start-here-app directory:"
-          ls -la /tmp/repo/scripts/helpers/start-here-app/ || echo "start-here-app directory not found"
+          ls -la /tmp/repo/scripts/helpers/start-here-app/ 2>/dev/null || echo "start-here-app directory not found"
           
           if [ -d "/tmp/repo/scripts/helpers/start-here-app/htdocs" ]; then
             echo "Found htdocs directory, showing contents:"
@@ -224,6 +228,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          set -e
           echo "Running config generator script..."
           node /scripts-init/config-generator.js
         volumeMounts:
@@ -238,13 +243,12 @@ spec:
         - name: generated-configs
           mountPath: /config/generated
       - name: fetch-materials
-        image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+        image: registry.access.redhat.com/ubi8/ubi:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
+          set -e
           echo "=== Materials Fetcher Init Container ==="
-          echo "Installing required tools..."
-          microdnf install -y git-core tar gzip wget && microdnf clean all
           echo "Attempting to download materials archive..."
           ARCHIVE_URL="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}/archives/materials.tar.gz"
           echo "Fetching archive from: ${ARCHIVE_URL}"
@@ -271,13 +275,24 @@ spec:
               ls -la /shared-materials/
             fi
           else
-            echo "Failed to download materials archive, trying direct git clone..."
-            git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
-            if [ -d "/tmp/repo/materials" ]; then
-              echo "Found materials directory in repo, copying..."
-              cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
+            echo "Failed to download materials archive, trying full repository download..."
+            REPO_ARCHIVE="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}.tar.gz"
+            echo "Repository archive URL: ${REPO_ARCHIVE}"
+            if curl -L -o /tmp/repo.tar.gz "${REPO_ARCHIVE}" 2>/dev/null; then
+              echo "Repository archive downloaded, extracting..."
+              mkdir -p /tmp/repo
+              tar -xzf /tmp/repo.tar.gz -C /tmp/repo --strip-components=1 2>/dev/null || echo "Extraction failed"
+              if [ -d "/tmp/repo/materials" ]; then
+                echo "Found materials directory in repo, copying..."
+                cp -r /tmp/repo/materials/* /shared-materials/ 2>/dev/null || echo "No materials to copy"
+              else
+                echo "No materials directory found, creating fallback..."
+                mkdir -p /shared-materials/tracks
+                echo "# Materials" > /shared-materials/tracks/index.md
+                echo "Materials not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
+              fi
             else
-              echo "No materials directory found, creating fallback..."
+              echo "Failed to download repository archive, creating fallback..."
               mkdir -p /shared-materials/tracks
               echo "# Materials" > /shared-materials/tracks/index.md
               echo "Materials not available for branch {{GIT_BRANCH}}" >> /shared-materials/tracks/index.md
