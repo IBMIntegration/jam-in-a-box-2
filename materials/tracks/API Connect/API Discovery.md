@@ -1,4 +1,4 @@
-# IBM API Connect working to discover your unknown APIs.
+# Discover your unknown APIs
 
 _Hands-on lab guide_
 

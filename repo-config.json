@@ -1,6 +1,14 @@
 {
   "template_vars": {
-    "REPO_GIT_URL": "https://github.com/capnajax/integration-jam-in-a-box.git",
-    "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box"
+    "REPO_GIT_URL": "https://github.com/IBMIntegration/jam-in-a-box-2.git",
+    "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2"
+  },
+  "forks": {
+    "capnajax": {
+      "template_vars": {
+        "REPO_GIT_URL": "https://github.com/capnajax/integration-jam-in-a-box.git",
+        "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box"
+      }
+    }
   }
 }
