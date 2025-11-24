@@ -139,15 +139,13 @@ spec:
     spec:
       initContainers:
       - name: htdocs-fetcher
-        image: alpine:latest
+        image: registry.access.redhat.com/ubi8/ubi-minimal:latest
         command: ["/bin/sh", "-c"]
-        securityContext:
-          runAsUser: 0
         args:
         - |
           echo "=== Htdocs Fetcher Init Container ==="
           echo "Installing required tools..."
-          apk add --no-cache git
+          microdnf install -y git-core && microdnf clean all
           echo "Cloning repository to get htdocs content..."
           git clone -b {{GIT_BRANCH}} --depth 1 {{REPO_GIT_URL}} /tmp/repo
           echo "Repository cloned successfully. Checking for htdocs..."
@@ -240,15 +238,13 @@ spec:
         - name: generated-configs
           mountPath: /config/generated
       - name: fetch-materials
-        image: alpine:latest
-        securityContext:
-          runAsUser: 0
+        image: registry.access.redhat.com/ubi8/ubi-minimal:latest
         command: ["/bin/sh", "-c"]
         args:
         - |
           echo "=== Materials Fetcher Init Container ==="
           echo "Installing required tools..."
-          apk add --no-cache curl tar wget git
+          microdnf install -y git-core tar gzip wget && microdnf clean all
           echo "Attempting to download materials archive..."
           ARCHIVE_URL="{{REPO_RAW_BASE_URL}}/{{GIT_BRANCH}}/archives/materials.tar.gz"
           echo "Fetching archive from: ${ARCHIVE_URL}"

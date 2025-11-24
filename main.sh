@@ -229,9 +229,13 @@ getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 #   --namespace="$NAMESPACE"
 
 log_info "Creating Start Here app resources..."
-"${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
+if ! "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
   --namespace="$JAM_NAMESPACE" \
   "${startHereParams[@]}"
+then
+  log_error "Start Here app setup failed"
+  exit 1
+fi
 
 log_info "Gathering OpenShift resource information..."
 
