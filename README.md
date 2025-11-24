@@ -1,6 +1,5 @@
 # integration-jam-in-a-box
 
-
 ## Getting Started
 
 1. Set up your IBM Tech Zone environment at IBM Technology Zone. Please note that once you have reserved your environment, it can take 2-3 hours to provision it.
@@ -40,10 +39,10 @@
         1. There is a green bar at the top that says "Pipeline cp4i-demo ran successfully. Please check the logs to view the login details here"
         ![CP4I installation is complete](README-images/GS12.png)
 
-1. Log in to the Openshift console
+1. Log in to the OpenShift console
 
     1. If you don't already have the OpenShift `oc` command line installed on your local machine, download and install it from either:
-        1. {{ cliDownloadLink | Your local Openshift console}}, or
+        1. Your local OpenShift console, or
         1. [developers.redhat.com](https://developers.redhat.com/learning/learn:openshift:download-and-install-red-hat-openshift-cli/resource/resources:download-and-install-oc)
 
     1. Use `oc` to log in to OpenShift
@@ -72,8 +71,12 @@
 
     ```sh
     # Basic usage (no parameters)
-    oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+    oc apply -f https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/main/setup.yaml
     ```
+
+    This process will take 10-15 minutes to complete.
+
+    - The first pod to appear, the `jam-setup-pod`, will take about five minutes, mostly creating an image regstry and building images.
 
 1. Get the URL and credentials for the jam-in-a-box app.
 

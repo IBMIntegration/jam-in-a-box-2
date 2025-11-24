@@ -7,7 +7,7 @@
 ## Prerequisites
 
 1. Have the OpenShift `oc` command line installed on your local machine. This can be downloaded from either:
-    1. {{ cliDownloadLink | Your local Openshift console}}, or
+    1. {{ cliDownloadLink | Your local OpenShift console}}, or
     1. [developers.redhat.com](https://developers.redhat.com/learning/learn:openshift:download-and-install-red-hat-openshift-cli/resource/resources:download-and-install-oc)
 
 1. Use `oc` to log in to OpenShift
