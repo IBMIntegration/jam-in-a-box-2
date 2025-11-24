@@ -141,6 +141,8 @@ spec:
       - name: htdocs-fetcher
         image: alpine:latest
         command: ["/bin/sh", "-c"]
+        securityContext:
+          runAsUser: 0
         args:
         - |
           echo "=== Htdocs Fetcher Init Container ==="
@@ -239,6 +241,8 @@ spec:
           mountPath: /config/generated
       - name: fetch-materials
         image: alpine:latest
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
         - |
