@@ -65,7 +65,7 @@ This section is for showing you handy tools for developing this app.
     alias oj='oc --namespace=jam-in-a-box'
     alias ot='oc --namespace=tools'
     if [ "$SHELL" == '/bin/bash' ]; then source <(oc completion bash); fi
-    if [ "$SHELL" == '/bin/zsh' ]; then source <(oc completion zsh); fi
+    if [ "$SHELL" = '/bin/zsh' ]; then source <(oc completion zsh); fi
     ```
 
 1. Use a post-commit hook to update archive files before checking content in. Set up the post-commit hook with

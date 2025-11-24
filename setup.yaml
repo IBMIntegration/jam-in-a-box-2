@@ -75,6 +75,13 @@ spec:
     - |
       echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
       
+      # Logging functions
+      error() {
+        echo "ERROR: $*" >&2
+        echo Cannot continue setup.
+        exit 1
+      }
+
       # Install required tools
       echo "Installing required tools..."
       echo "Available repositories:"
@@ -188,8 +195,7 @@ spec:
       echo "Verifying OpenShift authentication..."
       kubectl auth can-i get pods --namespace=jam-in-a-box
       if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to authenticate with OpenShift"
-        exit 1
+        error "Failed to authenticate with OpenShift"
       fi
       echo "Authentication successful!"
       
@@ -220,7 +226,7 @@ spec:
       # Wait a bit more for the registry to stabilize after state changes
       echo "Waiting for registry to stabilize..."
       sleep 30
-      
+            
       # Test kubectl command specifically
       echo "Testing kubectl command..."
       kubectl version --client
@@ -292,9 +298,13 @@ spec:
         echo "KUBECONFIG=$KUBECONFIG"
         retry_command kubectl auth whoami 2>/dev/null || echo "Using ServiceAccount token authentication"
         retry_command kubectl get pods --namespace=jam-in-a-box --limit=1 >/dev/null 2>&1 && echo "OpenShift access confirmed" || echo "OpenShift access failed"
-        
-        ./main.sh ${PARAMETERS}
-        SETUP_EXIT_CODE=$?
+        # Run main.sh with retry logic for resilience
+        if ! retry_command ./main.sh ${PARAMETERS}; then
+          error "main.sh failed after multiple retry attempts"
+          SETUP_EXIT_CODE=1
+        else
+          SETUP_EXIT_CODE=0
+        fi
         
         if [ $SETUP_EXIT_CODE -eq 0 ]; then
           echo "=== Setup completed successfully! ==="
@@ -302,7 +312,7 @@ spec:
           echo "=== Setup failed with exit code: $SETUP_EXIT_CODE ==="
         fi
       else
-        echo "ERROR: main.sh not found in cloned repository"
+        error "main.sh not found in cloned repository"
         ls -la
         exit 1
       fi
