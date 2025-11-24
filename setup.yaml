@@ -1,6 +1,6 @@
 ---
 # Integration Jam-in-a-Box One-Line Setup
-# Usage: oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+# Usage: oc apply -f https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/main/setup.yaml
 #
 # This will:
 # 1. Create necessary namespaces
@@ -253,9 +253,26 @@ spec:
         echo "Using main branch (default)"
       fi
       
+      # Get the repository URL from repo-config.json
+      repoUrl=""
+      curl -L https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/refs/heads/main/repo-config.json \
+        -o repo-config.json 2>/dev/null
+      repoUrl="$(cat repo-config.json | jq -r '.template_vars.REPO_GIT_URL')"
+      if [[ "$PARAMETERS" == *"--fork="* ]]; then
+        FORK_NAME=$(echo "$PARAMETERS" | grep -oP '(?<=--fork=)[^ ]+')
+        FORK_REPO_URL=$(cat repo-config.json | \
+          jq -r --arg FORK_NAME "$FORK_NAME" '.forks[$FORK_NAME].template_vars.REPO_GIT_URL // empty')
+        if [ -n "$FORK_REPO_URL" ]; then
+          repoUrl="$FORK_REPO_URL"
+          echo "Using fork repository URL: $repoUrl"
+        else
+          echo "Fork '$FORK_NAME' not found in repo-config.json, using default repository"
+        fi
+      fi
+
       # Clone the repository with the determined branch
       echo "Cloning repository from branch: $BRANCH"
-      git clone -b $BRANCH https://github.com/capnajax/integration-jam-in-a-box.git .
+      git clone -b $BRANCH $repoUrl .
       
       echo "Repository cloned successfully. Contents:"
       ls -la
