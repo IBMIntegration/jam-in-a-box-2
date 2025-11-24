@@ -140,6 +140,8 @@ spec:
       initContainers:
       - name: htdocs-fetcher
         image: alpine:latest
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
         - |
@@ -239,6 +241,8 @@ spec:
           mountPath: /config/generated
       - name: fetch-materials
         image: alpine:latest
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
         - |
