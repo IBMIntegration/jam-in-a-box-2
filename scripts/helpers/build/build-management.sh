@@ -77,7 +77,8 @@ function buildMdHandlerApp() {
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   # Convert git URL to raw GitHub URL for build.yaml
-  buildYamlUrl=$(echo "$materialsHandlerGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/"${GIT_BRANCH}"/build.yaml
+  # Always use 'main' branch for build.yaml since individual repos don't have canary branches
+  buildYamlUrl=$(echo "$materialsHandlerGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/main/build.yaml
   
   # Download build.yaml to temp location
   buildYamlPath="/tmp/materials-handler-build.yaml"
@@ -146,7 +147,8 @@ function buildNavigatorApp() {
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   # Convert git URL to raw GitHub URL for build.yaml
-  buildYamlUrl=$(echo "$navigatorGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/"${GIT_BRANCH}"/build.yaml
+  # Always use 'main' branch for build.yaml since individual repos don't have canary branches
+  buildYamlUrl=$(echo "$navigatorGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/main/build.yaml
   
   # Download build.yaml to temp location
   buildYamlPath="/tmp/navigator-build.yaml"
