@@ -72,9 +72,11 @@ function createNginxAuthSecret() {
 
 function createScriptsConfigMaps() {
   local NAME="$1"
-  local scriptPath
+  local scriptPath scriptDir
   
-  scriptPath="$(dirname "$0")/config-generator.js"
+  # Get the directory of this script file, not the calling script
+  scriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  scriptPath="$scriptDir/config-generator.js"
   
   log_debug "Creating scripts configmaps from $scriptPath"
   
