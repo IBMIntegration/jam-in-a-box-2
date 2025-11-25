@@ -27,6 +27,7 @@ for arg in "$@"; do
       ;;
     --quick)
       startHereParams+=("--quick")
+      # shellcheck disable=SC2034
       quickMode=true
       shift
       ;;
@@ -51,7 +52,7 @@ hasAllNecessaryTools=true
 
 function checkTool {
   for i in "$@"; do
-    if ! which "$i" &> /dev/null; then
+    if ! command -v "$i" &> /dev/null; then
         echo "$i is required but not installed. Please install $i and try again."
         hasAllNecessaryTools=false
     fi
