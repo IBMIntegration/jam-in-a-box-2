@@ -95,9 +95,9 @@ data:
     
     # Verify installations
     info "Verifying tool installations:"
-    which git && success "git installed"
-    which curl && success "curl installed"
-    which jq && success "jq installed"
+    command -v git >/dev/null && success "git installed"
+    command -v curl >/dev/null && success "curl installed"
+    command -v jq >/dev/null && success "jq installed"
 
   oc-tools.sh: |
     #!/bin/bash
