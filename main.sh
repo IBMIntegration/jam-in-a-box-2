@@ -16,6 +16,10 @@ for arg in "$@"; do
       startHereParams+=("${arg}")
       shift
       ;;
+    --fork=*)
+      startHereParams+=("${arg}")
+      shift
+      ;;
     --navigator-password=*)
       startHereParams+=("--password=${arg#*=}")
       shift
