@@ -13,11 +13,10 @@ log_debug() {
   fi
 }
 
-# Error messages - exits immediately
+# Error messages - no longer exits immediately (let caller handle return codes)
 log_error() {
   ((errorCount++))
   echo "❌ ERROR: $1" >&2
-  exit 1
 }
 
 # Main header for major sections
