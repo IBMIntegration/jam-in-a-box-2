@@ -6,6 +6,23 @@ set -e
 # Build Management Functions
 # =============================================================================
 
+function checkImageExists() {
+  local appName="$1"
+  local imageSha
+  
+  log_debug "Checking if image already exists for $appName"
+  imageSha=$(oc get imagestream "$appName" -n "$NAMESPACE" \
+    -o jsonpath='{.status.tags[0].items[0].image}' 2>/dev/null || echo "")
+  
+  if [[ -n "$imageSha" ]]; then
+    log_info "Image already exists: ${imageSha:0:12}..."
+    return 0
+  else
+    log_debug "No existing image found for $appName"
+    return 1
+  fi
+}
+
 function applyBuildConfiguration() {
   local appName="$1"
   local yamlFile="$2" 
@@ -83,6 +100,13 @@ function buildMdHandlerApp() {
     return 1
   fi
   
+  # Check if image already exists in quick mode
+  # shellcheck disable=SC2154
+  if [[ "$quickMode" == "true" ]] && checkImageExists "$appName"; then
+    log_success "Quick mode: Using existing image for $appName"
+    return 0
+  fi
+  
   # Clean up existing builds
   if ! cleanupExistingBuilds "$appName"; then
     return 1
@@ -143,6 +167,12 @@ function buildNavigatorApp() {
   # Apply build configuration
   if ! applyBuildConfiguration "$appName" "$buildYamlPath"; then
     return 1
+  fi
+  
+  # Check if image already exists in quick mode
+  if [[ "$quickMode" == "true" ]] && checkImageExists "$appName"; then
+    log_success "Quick mode: Using existing image for $appName"
+    return 0
   fi
   
   # Clean up existing builds
@@ -262,7 +292,16 @@ function waitForBuildCompletion() {
   log_subheader "Waiting for build completion: $buildName"
   
   log_info "Waiting for build to complete (timeout: 10 minutes)..."
-  if oc wait --for=condition=Complete "build/$buildName" --timeout=600s -n "$NAMESPACE"; then
+  
+  # Wait for either Complete or Failed condition
+  # Ignore wait command exit code, check actual build status instead
+  oc wait --for=condition=Complete "build/$buildName" --timeout=600s -n "$NAMESPACE" 2>&1 || true
+  
+  # Check actual build status
+  buildStatus=$(oc get build "$buildName" -n "$NAMESPACE" \
+    -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+  
+  if [[ "$buildStatus" == "Complete" ]]; then
     log_success "Build completed successfully!"
     
     # Verify image is available
@@ -276,9 +315,6 @@ function waitForBuildCompletion() {
     return 0
   else
     log_error "Build failed or timed out"
-    
-    buildStatus=$(oc get build "$buildName" -n "$NAMESPACE" \
-      -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
     log_error "Build status: $buildStatus"
     
     showBuildDiagnostics "$buildName" "$appName"
