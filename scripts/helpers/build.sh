@@ -27,6 +27,7 @@ source "$SCRIPT_DIR/build/logging.sh"
 doClean=false
 navigatorPassword=''
 quickMode=false
+export quickMode
 fork=''
 while [[ $# -gt 0 ]]; do
   case $1 in
