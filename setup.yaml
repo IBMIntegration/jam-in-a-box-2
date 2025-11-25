@@ -98,6 +98,13 @@ data:
     command -v git >/dev/null && success "git installed"
     command -v curl >/dev/null && success "curl installed"
     command -v jq >/dev/null && success "jq installed"
+    
+    # Install Node.js
+    info "Installing Node.js 20..."
+    microdnf module enable -y nodejs:20
+    microdnf install -y nodejs npm
+    command -v node >/dev/null && success "Node.js installed: $(node --version)"
+    command -v npm >/dev/null && success "npm installed: $(npm --version)"
 
   oc-tools.sh: |
     #!/bin/bash
