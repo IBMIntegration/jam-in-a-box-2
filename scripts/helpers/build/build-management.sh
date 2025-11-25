@@ -2,6 +2,9 @@
 
 set -e
 
+# Error trap to show what command failed
+trap 'echo "ERROR: Command failed at line $LINENO: $BASH_COMMAND" >&2' ERR
+
 # =============================================================================
 # Build Management Functions
 # =============================================================================
