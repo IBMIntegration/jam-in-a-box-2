@@ -48,10 +48,12 @@ function applyBuildConfiguration() {
   log_debug "Using Git branch: $GIT_BRANCH"
   
   # Use safe bash string replacement instead of sed to avoid delimiter conflicts
+  # Note: Individual repos (jam-navigator, jam-materials, jam-materials-handler) only have 'main' branch
+  # The GIT_BRANCH variable is for the integration-jam-in-a-box repo, not the individual repos
   buildYaml=$(cat "$yamlFile")
   buildYaml="${buildYaml//\{\{NAME\}\}/$appName}"
   buildYaml="${buildYaml//\{\{NAMESPACE\}\}/$NAMESPACE}"
-  buildYaml="${buildYaml//\{\{GIT_BRANCH\}\}/$GIT_BRANCH}"
+  buildYaml="${buildYaml//\{\{GIT_BRANCH\}\}/main}"
   buildYaml="${buildYaml//\{\{REPO_GIT_URL\}\}/$repoGitUrl}"
   buildYaml="${buildYaml//\{\{MATERIALS_HANDLER_GIT_URL\}\}/$materialsHandlerGitUrl}"
   buildYaml="${buildYaml//\{\{MATERIALS_GIT_URL\}\}/$materialsGitUrl}"
@@ -310,11 +312,39 @@ function waitForBuildCompletion() {
   
   log_info "Waiting for build to complete (timeout: 10 minutes)..."
   
-  # Wait for either Complete or Failed condition
-  # Ignore wait command exit code, check actual build status instead
-  oc wait --for=condition=Complete "build/$buildName" --timeout=600s -n "$NAMESPACE" 2>&1 || true
+  # Poll build status instead of using wait, so we can detect failures early
+  local maxWait=600
+  local elapsed=0
+  local checkInterval=5
   
-  # Check actual build status
+  while [[ $elapsed -lt $maxWait ]]; do
+    buildStatus=$(oc get build "$buildName" -n "$NAMESPACE" \
+      -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+    
+    case "$buildStatus" in
+      Complete)
+        log_success "Build completed successfully!"
+        break
+        ;;
+      Failed|Error|Cancelled)
+        log_error "Build failed with status: $buildStatus"
+        showBuildDiagnostics "$buildName" "$appName"
+        return 1
+        ;;
+      New|Pending|Running)
+        log_debug "Build status: $buildStatus (elapsed: ${elapsed}s)"
+        sleep $checkInterval
+        ((elapsed += checkInterval))
+        ;;
+      *)
+        log_debug "Build status: $buildStatus (elapsed: ${elapsed}s)"
+        sleep $checkInterval
+        ((elapsed += checkInterval))
+        ;;
+    esac
+  done
+  
+  # Final status check after loop
   buildStatus=$(oc get build "$buildName" -n "$NAMESPACE" \
     -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
   
