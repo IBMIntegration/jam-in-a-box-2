@@ -267,7 +267,10 @@ data:
     
     # Determine which branch to clone based on parameters
     BRANCH="main"
-    if [[ "$PARAMETERS" == *"--canary"* ]]; then
+    if [[ "$PARAMETERS" == *"--canary="* ]]; then
+      BRANCH=$(echo "$PARAMETERS" | grep -oP '(?<=--canary=)[^ ]+')
+      info "Using branch: $BRANCH (from --canary parameter)"
+    elif [[ "$PARAMETERS" == *"--canary"* ]]; then
       BRANCH="canary"
       info "Using canary branch based on --canary parameter"
     else
