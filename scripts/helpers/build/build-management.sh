@@ -57,12 +57,19 @@ function applyBuildConfiguration() {
   buildYaml="${buildYaml//\{\{MATERIALS_GIT_URL\}\}/$materialsGitUrl}"
   buildYaml="${buildYaml//\{\{NAVIGATOR_GIT_URL\}\}/$navigatorGitUrl}"
   
-  log_debug "Applying YAML (first 20 lines):"
-  log_debug "$(echo "$buildYaml" | head -20)"
+  log_info "Applying build configuration for $appName to namespace $NAMESPACE"
+  log_debug "YAML template variables:"
+  log_debug "  REPO_GIT_URL=$repoGitUrl"
+  log_debug "  MATERIALS_HANDLER_GIT_URL=$materialsHandlerGitUrl"
+  log_debug "  MATERIALS_GIT_URL=$materialsGitUrl"
+  log_debug "  NAVIGATOR_GIT_URL=$navigatorGitUrl"
+  log_debug "  GIT_BRANCH=$GIT_BRANCH"
   
   applyOutput=$(echo "$buildYaml" | oc apply -f - 2>&1) || {
-    log_error "Failed to apply build configuration"
-    log_error "Output: $applyOutput"
+    echo "❌ ERROR: Failed to apply build configuration for $appName" >&2
+    echo "❌ ERROR: oc apply output: $applyOutput" >&2
+    echo "❌ ERROR: YAML content (first 50 lines):" >&2
+    echo "$buildYaml" | head -50 >&2
     return 1
   }
   log_debug "Apply output: $applyOutput"
