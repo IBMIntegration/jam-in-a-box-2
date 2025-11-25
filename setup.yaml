@@ -413,7 +413,7 @@ spec:
   # Main container to run setup
   containers:
   - name: jam-setup
-    image: registry.redhat.io/ubi8/nodejs-20:latest
+    image: registry.redhat.io/ubi8/ubi-minimal:latest
     workingDir: /workspace
     volumeMounts:
     - name: repo-volume
