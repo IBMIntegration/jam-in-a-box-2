@@ -57,10 +57,15 @@ function applyBuildConfiguration() {
   buildYaml="${buildYaml//\{\{MATERIALS_GIT_URL\}\}/$materialsGitUrl}"
   buildYaml="${buildYaml//\{\{NAVIGATOR_GIT_URL\}\}/$navigatorGitUrl}"
   
-  if ! echo "$buildYaml" | oc apply -f -; then
+  log_debug "Applying YAML (first 20 lines):"
+  log_debug "$(echo "$buildYaml" | head -20)"
+  
+  applyOutput=$(echo "$buildYaml" | oc apply -f - 2>&1) || {
     log_error "Failed to apply build configuration"
+    log_error "Output: $applyOutput"
     return 1
-  fi
+  }
+  log_debug "Apply output: $applyOutput"
   
   log_success "Build configuration applied"
   return 0
