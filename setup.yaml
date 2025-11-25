@@ -170,7 +170,7 @@ data:
     # Define retry function in env_setup for use by this and other scripts
     cat >> /tmp/env_setup << 'EOF'
     retry_command() {
-      local max_attempts=5
+      local max_attempts=2
       local delay=10
       local attempt=1
       while [ $attempt -le $max_attempts ]; do

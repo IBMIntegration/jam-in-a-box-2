@@ -190,12 +190,6 @@ function setupNginxAndDeploy() {
     return 1
   fi
   
-  # Create rest-proxy configmap
-  if ! createRestProxyConfigMap "$NAME"; then
-    log_error "Failed to create rest-proxy configmap"
-    return 1
-  fi
-  
   # Create scripts configmaps
   if ! createScriptsConfigMaps "$NAME"; then
     log_error "Failed to create scripts configmaps"
