@@ -43,17 +43,7 @@ data:
           # No auth required
         }
         
-        # Proxy requests to rest-proxy container (requires auth)
-        location /proxy/ {
-          auth_basic "Restricted Area";
-          proxy_pass http://localhost:3000/proxy/;
-          proxy_set_header Host \$host;
-          proxy_set_header X-Real-IP \$remote_addr;
-          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto \$scheme;
-        }
-        
-        # Proxy ALL /tracks requests to md-handler (higher priority than HTML regex)
+        # Proxy requests to md-handler
         location /tracks {
           auth_basic "Restricted Area";
           proxy_pass http://localhost:8081;
@@ -176,12 +166,6 @@ spec:
           mountPath: /var/cache/nginx
         - name: runtime-data
           mountPath: /var/run
-      - name: rest-proxy
-        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-navigator:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3000
-        command: ["node", "/app/rest-proxy.js"]
       - name: md-handler
         image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-materials-handler:latest
         imagePullPolicy: Always
