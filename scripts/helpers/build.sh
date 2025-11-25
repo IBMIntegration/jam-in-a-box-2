@@ -1,0 +1,112 @@
+#!/bin/bash
+
+set -e
+
+# =============================================================================
+# Configuration and Global Variables
+# =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LABEL_APP="navigator"
+LABEL="app=${LABEL_APP}"
+NAMESPACE="jam-in-a-box"
+GIT_BRANCH="main"
+LAST_BUILD_NAME=""
+ROUTE_BASENAME="integration"
+
+DEBUG=true
+
+## 
+# This is a one-touch deployment script for a jam-in-a-box educational
+# environment. These scripts assume OpenShift and Cloud Pak for integration are
+# installed and configured, with the Cloud Pak in the `tools` namespace. It also
+# sets up an app to guide students through course materials and provide the
+# basic URLs and credentials of the installed things.
+
+source "$SCRIPT_DIR/build/logging.sh"
+
+doClean=false
+navigatorPassword=''
+quickMode=false
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --canary)
+      GIT_BRANCH="canary"
+      shift
+      ;;
+    --canary=*)
+      GIT_BRANCH="${1#*=}"
+      shift
+      ;;
+    --clean)
+      doClean=true
+      shift
+      ;;
+    --namespace=*)
+      NAMESPACE="${1#*=}"
+      shift
+      ;;
+    --password=*)
+      navigatorPassword="${1#*=}"
+      shift
+      ;;
+    --quick)
+      quickMode=true
+      shift
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
+  esac
+done
+
+source "$SCRIPT_DIR/build/registry-management.sh"
+source "$SCRIPT_DIR/build/build-management.sh"
+source "$SCRIPT_DIR/build/cleanup.sh"
+source "$SCRIPT_DIR/build/utility.sh"
+source "$SCRIPT_DIR/build/app-deployment.sh"
+
+function setupNavigatorApp() {
+  log_header "Starting Setup of Navigator Application"
+  
+  log_debug "Configuration - Password set: ${navigatorPassword:+yes}"
+  
+  # Step 1: Build navigator image (nginx + htdocs)
+  if ! setupNavigator; then
+    log_error "Failed to setup navigator"
+    return 1
+  fi
+  
+  # Step 2: Build materials-handler (S2I image with materials baked in)
+  if ! setupMdHandler; then
+    log_error "Failed to setup materials-handler"
+    return 1
+  fi
+  
+  # Step 3: Deploy and apply main deployment
+  if ! setupNginxAndDeploy; then
+    log_error "Failed to deploy application"
+    return 1
+  fi
+  
+  log_success "Navigator Application setup completed successfully"
+}
+
+# =============================================================================
+# Main Execution
+# =============================================================================
+
+cleanup
+setupNavigatorApp
+
+# =============================================================================
+# Final Error Reporting
+# =============================================================================
+
+if [[ $errorCount -eq 0 ]]; then
+  log_success "Script completed successfully with no errors"
+else
+  log_error "Script completed with $errorCount error(s)"
+fi
+
+exit $errorCount

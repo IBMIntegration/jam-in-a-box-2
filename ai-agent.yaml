@@ -62,6 +62,6 @@ rules of engagement:
 
 testing:
   # - test with this command line:
-  #    ./main.sh --clean --start-here-app-password=jam --canary
+  #    ./main.sh --clean --navigator-password=jam --canary
 
 z ai space: []

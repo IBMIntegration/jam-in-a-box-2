@@ -1,0 +1,234 @@
+#!/bin/bash
+
+set -e
+
+# =============================================================================
+# Registry Management Functions
+# =============================================================================
+
+function checkRegistryOperator() {
+  local registryAvailable managementState storageConfigured
+  
+  log_debug "Checking if registry operator exists"
+  if ! oc get clusteroperator image-registry >/dev/null 2>&1; then
+    log_error "Registry operator not found"
+    return 1
+  fi
+  
+  log_debug "Checking registry operator availability status"
+  registryAvailable=$(oc get clusteroperator image-registry -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' 2>/dev/null || echo "False")
+  
+  log_debug "Checking registry management state"
+  managementState=$(oc get config.imageregistry cluster -o jsonpath='{.spec.managementState}' 2>/dev/null || echo "")
+  
+  log_debug "Checking registry storage configuration"
+  storageConfigured=$(oc get config.imageregistry cluster -o jsonpath='{.spec.storage}' 2>/dev/null || echo "{}")
+  
+  if [[ "$registryAvailable" != "True" ]]; then
+    log_error "Registry operator found but not available (status: $registryAvailable)"
+    return 1
+  fi
+  
+  if [[ "$managementState" != "Managed" ]]; then
+    log_error "Registry management state is not 'Managed' (current: $managementState)"
+    return 1
+  fi
+  
+  if [[ "$storageConfigured" == "{}" ]]; then
+    log_error "Registry storage is not configured"
+    return 1
+  fi
+  
+  log_debug "Registry operator is available and properly configured"
+  log_debug "Management state: $managementState"
+  log_debug "Storage config: $storageConfigured"
+  return 0
+}
+
+function enableInternalRegistry() {
+  log_subheader "Enabling internal registry with storage"
+  
+  log_debug "Patching registry config to Managed state with emptyDir storage"
+  if ! oc patch config.imageregistry cluster --type merge --patch='{"spec":{"managementState":"Managed","storage":{"emptyDir":{}}}}'; then
+    log_error "Failed to patch registry configuration"
+    return 1
+  fi
+  
+  log_info "Waiting for registry to become available (up to 5 minutes)..."
+  if ! oc wait --for=condition=Available clusteroperator/image-registry --timeout=300s; then
+    log_error "Registry failed to become available within timeout"
+    return 1
+  fi
+  
+  # Additional wait for registry to be truly ready for builds
+  log_info "Waiting for registry deployment to stabilize..."
+  sleep 30
+  
+  log_success "Registry is now available"
+  return 0
+}
+
+function ensureInternalRegistry() {
+  log_header "Ensuring OpenShift Internal Registry"
+  
+  if checkRegistryOperator; then
+    log_success "Registry is already available"
+  else
+    if ! enableInternalRegistry; then
+      return 1
+    fi
+  fi
+  
+  if ! ensureRegistryRoute; then
+    return 1
+  fi
+  
+  if ! verifyRegistryDeployment; then
+    return 1
+  fi
+  
+  if ! validateImageStreamConfiguration; then
+    return 1
+  fi
+  
+  # Force build controller to refresh its registry configuration
+  if ! forceRegistryRefresh; then
+    return 1
+  fi
+  
+  log_success "Internal registry is fully configured and ready for ImageStreams"
+  return 0
+}
+
+function ensureRegistryRoute() {
+  local i
+  
+  log_debug "Checking if default route exists for registry"
+  if oc get route default-route -n openshift-image-registry >/dev/null 2>&1; then
+    log_debug "Registry route already exists"
+    return 0
+  fi
+  
+  log_subheader "Creating default route for registry"
+  
+  log_debug "Enabling defaultRoute in registry config"
+  if ! oc patch config.imageregistry cluster --type merge --patch='{"spec":{"defaultRoute":true}}'; then
+    log_error "Failed to enable default route for registry"
+    return 1
+  fi
+  
+  log_info "Waiting for registry route to be created..."
+  for i in {1..30}; do
+    if oc get route default-route -n openshift-image-registry >/dev/null 2>&1; then
+      log_success "Registry route created"
+      return 0
+    fi
+    log_debug "Waiting for registry route... (attempt $i/30)"
+    sleep 5
+  done
+  
+  log_error "Failed to create registry route within timeout"
+  return 1
+}
+
+function forceRegistryRefresh() {
+  log_subheader "Forcing build controller to refresh registry configuration"
+  
+  # Delete any stuck builds first
+  log_debug "Cleaning up any stuck builds in 'New' state"
+  oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
+    awk '$3=="New" {print $1}' | \
+    xargs -r oc delete build -n "$NAMESPACE"
+  
+  # Force restart of openshift-controller-manager pods to refresh registry state
+  log_info "Restarting openshift-controller-manager to refresh registry configuration"
+  if oc get pods -n openshift-controller-manager >/dev/null 2>&1; then
+    oc delete pods -n openshift-controller-manager --all --wait=false >/dev/null 2>&1 || true
+    sleep 10
+    log_info "Waiting for controller manager to restart..."
+    oc wait --for=condition=Ready pods -l app=openshift-controller-manager -n openshift-controller-manager --timeout=120s >/dev/null 2>&1 || true
+  fi
+  
+  log_success "Registry refresh completed"
+  return 0
+}
+
+function validateImageStreamConfiguration() {
+  local registryService registryHost
+  
+  log_debug "Validating ImageStream configuration for namespace: $NAMESPACE"
+  
+  # Check if the internal registry service exists
+  if ! oc get service image-registry -n openshift-image-registry >/dev/null 2>&1; then
+    log_error "Registry service not found in openshift-image-registry namespace"
+    return 1
+  fi
+  
+  # Get the registry service cluster IP
+  registryService=$(oc get service image-registry -n openshift-image-registry -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+  if [[ -z "$registryService" ]]; then
+    log_error "Could not determine registry service cluster IP"
+    return 1
+  fi
+  
+  # Check if we can resolve the internal registry hostname
+  registryHost="image-registry.openshift-image-registry.svc:5000"
+  log_debug "Internal registry should be accessible at: $registryHost"
+  
+  # Verify namespace exists and we have access to it
+  if ! oc get namespace "$NAMESPACE" >/dev/null 2>&1; then
+    log_error "Target namespace '$NAMESPACE' does not exist or is not accessible"
+    return 1
+  fi
+  
+  # Check if we have permissions to create ImageStreams in the target namespace
+  if ! oc auth can-i create imagestreams -n "$NAMESPACE" >/dev/null 2>&1; then
+    log_error "No permission to create ImageStreams in namespace '$NAMESPACE'"
+    return 1
+  fi
+  
+  # Test if registry is actually accepting ImageStream outputs by checking config
+  local registryConfig
+  registryConfig=$(oc get config.imageregistry cluster -o json 2>/dev/null || echo "{}")
+  if echo "$registryConfig" | jq -r '.spec.managementState' | grep -q "Managed"; then
+    log_debug "Registry management state confirmed as Managed"
+  else
+    log_error "Registry management state is not Managed"
+    return 1
+  fi
+  
+  # Wait a bit more and check if any builds are stuck in New state
+  if oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | grep -q "New"; then
+    log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
+    sleep 30
+  fi
+  
+  log_debug "ImageStream configuration validation passed"
+  log_debug "Registry service IP: $registryService"
+  log_debug "Registry internal host: $registryHost"
+  return 0
+}
+
+function verifyRegistryDeployment() {
+  local registryReplicas
+  
+  log_debug "Checking if registry deployment exists"
+  if ! oc get deployment image-registry -n openshift-image-registry >/dev/null 2>&1; then
+    log_error "Registry deployment not found"
+    return 1
+  fi
+  
+  log_debug "Checking registry deployment readiness"
+  registryReplicas=$(oc get deployment image-registry -n openshift-image-registry -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+  
+  if [[ "$registryReplicas" == "0" ]] || [[ -z "$registryReplicas" ]]; then
+    log_info "Waiting for registry deployment to be ready..."
+    if ! oc rollout status deployment/image-registry -n openshift-image-registry --timeout=180s; then
+      log_error "Registry deployment failed to become ready"
+      return 1
+  fi
+  fi
+  
+  log_debug "Registry deployment is ready with $registryReplicas replica(s)"
+  return 0
+}

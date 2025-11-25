@@ -1,0 +1,309 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{APP}}-nginx-config
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+data:
+  nginx.conf: |
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+      
+      # Basic auth file
+      auth_basic_user_file /etc/nginx/.htpasswd;
+      
+      server {
+        listen {{PORT}};
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+        
+        # Enable Server Side Includes for HTML files
+        ssi on;
+        ssi_silent_errors off;
+        ssi_types text/shtml;
+        
+        # Disable script execution
+        location ~* \.(php|pl|py|jsp|asp|sh|cgi)$ {
+          return 403;
+        }
+        
+        # Public access for public directory
+        location /public/ {
+          # No auth required
+        }
+        location /js/ {
+          # No auth required
+        }
+        
+        # Proxy requests to rest-proxy container (requires auth)
+        location /proxy/ {
+          auth_basic "Restricted Area";
+          proxy_pass http://localhost:3000/proxy/;
+          proxy_set_header Host \$host;
+          proxy_set_header X-Real-IP \$remote_addr;
+          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto \$scheme;
+        }
+        
+        # Proxy ALL /tracks requests to md-handler (higher priority than HTML regex)
+        location /tracks {
+          auth_basic "Restricted Area";
+          proxy_pass http://localhost:8081;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # Handle HTML files with SSI enabled (but exclude /tracks paths)
+        location ~ ^(?!/tracks).*\.html$ {
+          ssi on;
+          auth_basic "Restricted Area";
+        }
+        
+        # Everything else requires auth (including index.html)
+        location / {
+          auth_basic "Restricted Area";
+          try_files $uri $uri/ /404.html;
+
+          # Only serve index.html for root path
+          location = / {
+            try_files /index.html /404.html;
+          }
+        }
+        
+        # Custom 404 error page
+        error_page 404 /404.html;
+        location = /404.html {
+          auth_basic "Restricted Area";
+          internal;
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{NAME}}-app-credentials
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+type: Opaque
+data:
+  username: {{USERNAME_BASE64}}
+  password: {{PASSWORD_BASE64}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{NAME}}-md-handler-config
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+    component: md-handler
+data:
+  config.json: |
+    {
+      "_comment": "Main MD Handler Server Configuration",
+      "port": 8081,
+      "basePath": "/materials",
+      "host": "0.0.0.0",
+      "admin-port": 8082,
+      "admin-host": "0.0.0.0"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jam-in-a-box
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{LABEL_APP}}
+  template:
+    metadata:
+      labels:
+        app: {{LABEL_APP}}
+    spec:
+      initContainers:
+      - name: setup
+        image: registry.redhat.io/ubi8/nodejs-20:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -e
+          echo "Running config generator script..."
+          node /scripts-init/config-generator.js
+        volumeMounts:
+        - name: setup-config
+          mountPath: /scripts-init
+        - name: setup-output-config
+          mountPath: /config/setup.json
+          subPath: setup.json
+        - name: setup-secrets
+          mountPath: /config/secret.json
+          subPath: secret.json
+        - name: generated-configs
+          mountPath: /config/generated
+      containers:
+      - name: nginx
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-navigator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{PORT}}
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: htpasswd
+          mountPath: /etc/nginx/.htpasswd
+          subPath: .htpasswd
+        - name: generated-configs
+          mountPath: /usr/share/nginx/html/config
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: runtime-data
+          mountPath: /var/run
+      - name: rest-proxy
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-navigator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        command: ["node", "/app/rest-proxy.js"]
+      - name: md-handler
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-materials-handler:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+          name: http
+        - containerPort: 8082
+          name: admin
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8081"
+        - name: BASE_PATH
+          value: "/materials"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: ADMIN_PORT
+          value: "8082"
+        - name: ADMIN_HOST
+          value: "0.0.0.0"
+        volumeMounts:
+        - name: md-handler-config
+          mountPath: /opt/app-root/src/config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        workingDir: /opt/app-root/src
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{NAME}}-nginx-config
+      - name: htpasswd
+        secret:
+          secretName: {{NAME}}-nginx-auth
+      - name: generated-configs
+        emptyDir: {}
+      - name: setup-config
+        configMap:
+          name: {{NAME}}-scripts-init
+      - name: setup-output-config
+        configMap:
+          name: setup-output
+      - name: setup-secrets
+        secret:
+          secretName: setup-secrets
+      - name: nginx-cache
+        emptyDir: {}
+      - name: runtime-data
+        emptyDir: {}
+      - name: md-handler-config
+        configMap:
+          name: {{NAME}}-md-handler-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{PORT}}
+    targetPort: {{PORT}}
+    protocol: TCP
+    name: nginx
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: md-handler
+  selector:
+    app: {{LABEL_APP}}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ROUTE_BASENAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+spec:
+  to:
+    kind: Service
+    name: {{NAME}}
+  port:
+    targetPort: {{PORT}}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{NAME}}-md-handler
+  namespace: {{NAMESPACE}}
+  labels:
+    app: {{LABEL_APP}}
+    component: md-handler
+spec:
+  to:
+    kind: Service
+    name: {{NAME}}
+  port:
+    targetPort: 8081
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

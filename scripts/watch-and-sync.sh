@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Get the directory of this script and set HTDOCS_DIR relative to it
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HTDOCS_DIR="${SCRIPT_DIR}/helpers/start-here-app/htdocs"
+HTDOCS_DIR="${SCRIPT_DIR}/helpers/navigator/htdocs"
 DEBOUNCE_DELAY=1
 LAST_SYNC=0
 NAMESPACE="jam-in-a-box"
@@ -33,12 +33,12 @@ sync_files() {
     # Get the pod name
     local pod_name
     pod_name=$(oc --namespace=${NAMESPACE} get po \
-        --selector=app=jb-start-here -o name | \
+        --selector=app=navigator -o name | \
         sed -e 's/^[^\/]*\///' | head -1)
     
     if [[ -z "$pod_name" ]]; then
         log_message "ERROR: No pod found with selector " \
-            "app=jb-start-here"
+            "app=navigator"
         return 1
     fi
     

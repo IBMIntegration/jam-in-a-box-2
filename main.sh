@@ -16,7 +16,12 @@ for arg in "$@"; do
       startHereParams+=("${arg}")
       shift
       ;;
+    --navigator-password=*)
+      startHereParams+=("--password=${arg#*=}")
+      shift
+      ;;
     --start-here-app-password=*)
+      echo "Warning: --start-here-app-password is deprecated, use --navigator-password instead" >&2
       startHereParams+=("--password=${arg#*=}")
       shift
       ;;
@@ -79,8 +84,8 @@ fi
 log_info "Tool check completed successfully"
 
 log_info "Cleaning up previous output files if they exist..."
-oc -n "${JAM_NAMESPACE}" delete configmap jb-setup-output --ignore-not-found
-oc -n "${JAM_NAMESPACE}" delete secret jb-setup-secrets --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete configmap setup-output --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete secret setup-secrets --ignore-not-found
 
 ##
 # Reduce the size of the oc output by filtering out information that is
@@ -221,7 +226,7 @@ else
   fi
 fi
 
-"${SCRIPT_DIR}/scripts/datapower/jb-datapower.sh" --namespace="${JAM_NAMESPACE}"
+"${SCRIPT_DIR}/scripts/datapower/datapower.sh" --namespace="${JAM_NAMESPACE}"
 getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 
 # log_info "Creating Gatsby app resources..."
@@ -229,7 +234,7 @@ getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 #   --namespace="$NAMESPACE"
 
 log_info "Creating Start Here app resources..."
-if ! "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
+if ! "${SCRIPT_DIR}/scripts/helpers/build.sh" \
   --namespace="$JAM_NAMESPACE" \
   "${startHereParams[@]}"
 then
@@ -255,7 +260,7 @@ getInfo route tools apim-demo-mgmt-api-manager
 getInfo secret tools apim-demo-mgmt-admin-pass
 
 getInfo route "${JAM_NAMESPACE}" integration
-getInfo secret "${JAM_NAMESPACE}" jb-start-here-app-credentials
+getInfo secret "${JAM_NAMESPACE}" navigator-credentials
 
 log_info "Finalizing output files..."
 endFile "$output_file"
@@ -282,9 +287,9 @@ fi
 
 log_info "Creating ConfigMap and Secret for output files..."
 
-oc -n "${JAM_NAMESPACE}" create configmap jb-setup-output \
+oc -n "${JAM_NAMESPACE}" create configmap setup-output \
   --from-file=setup.json="$output_file"
-oc -n "${JAM_NAMESPACE}" create secret generic jb-setup-secrets \
+oc -n "${JAM_NAMESPACE}" create secret generic setup-secrets \
   --from-file=secret.json="$secret_file"
 
 log_info "Creating report..."
