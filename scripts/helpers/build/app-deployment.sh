@@ -191,6 +191,19 @@ function setupNginxAndDeploy() {
     return 1
   fi
   
+  # Create navigator-credentials secret (used by config-generator.js in init container)
+  log_debug "Creating navigator-credentials secret with username: $USERNAME"
+  oc create secret generic navigator-credentials \
+    --namespace="$NAMESPACE" \
+    --from-literal=username="$USERNAME" \
+    --from-literal=password="$PASSWORD" \
+    --dry-run=client -o yaml | \
+    oc label --local -f - app="$LABEL_APP" -o yaml | \
+    oc apply -f - || {
+    log_error "Failed to create navigator-credentials secret"
+    return 1
+  }
+  
   # Create scripts configmaps
   if ! createScriptsConfigMaps "$NAME"; then
     log_error "Failed to create scripts configmaps"
