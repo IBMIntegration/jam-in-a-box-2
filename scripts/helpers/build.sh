@@ -70,7 +70,9 @@ done
 if [ -n "$fork" ]; then
   log_info "Using fork: $fork"
   REPO_CONFIG_FILE="$SCRIPT_DIR/../../repo-config.json"
+  log_debug "Repo config file path: $REPO_CONFIG_FILE"
   if [ -f "$REPO_CONFIG_FILE" ]; then
+    log_debug "Before fork update: $(jq -r '.template_vars.NAVIGATOR_GIT_URL' "$REPO_CONFIG_FILE")"
     # Extract fork-specific URLs and update template_vars
     FORK_VARS=$(jq -r ".forks[\"$fork\"].template_vars" "$REPO_CONFIG_FILE")
     if [ "$FORK_VARS" != "null" ]; then
@@ -78,10 +80,14 @@ if [ -n "$fork" ]; then
       jq ".template_vars = .forks[\"$fork\"].template_vars" "$REPO_CONFIG_FILE" > "${REPO_CONFIG_FILE}.tmp"
       mv "${REPO_CONFIG_FILE}.tmp" "$REPO_CONFIG_FILE"
       log_info "Updated repo-config.json to use fork: $fork"
+      log_debug "After fork update: $(jq -r '.template_vars.NAVIGATOR_GIT_URL' "$REPO_CONFIG_FILE")"
     else
       log_error "Fork '$fork' not found in repo-config.json"
       exit 1
     fi
+  else
+    log_error "Repo config file not found: $REPO_CONFIG_FILE"
+    exit 1
   fi
 fi
 
