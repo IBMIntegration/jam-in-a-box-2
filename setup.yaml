@@ -294,6 +294,7 @@ data:
 
     # Clone the repository with the determined branch
     info "Cloning repository from branch: $BRANCH"
+    rm -rf .git ./* .[^.]* 2>/dev/null || true
     git clone -b $BRANCH $repoUrl .
     
     info "Repository cloned successfully. Contents:"
