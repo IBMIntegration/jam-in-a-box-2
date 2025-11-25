@@ -176,7 +176,7 @@ function setupNginxAndDeploy() {
   
   # Declare and initialize all local variables
   NAME="${LABEL_APP}"
-  yamlFile="$(dirname "$0")/navigator/deployment.yaml"
+  yamlFile="$SCRIPT_DIR/build/deployment.yaml"
   PORT=8088
   
   log_debug "Using deployment template: $yamlFile"
