@@ -27,6 +27,7 @@ source "$SCRIPT_DIR/build/logging.sh"
 doClean=false
 navigatorPassword=''
 quickMode=false
+fork=''
 while [[ $# -gt 0 ]]; do
   case $1 in
     --canary)
@@ -39,6 +40,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --clean)
       doClean=true
+      shift
+      ;;
+    --fork=*)
+      fork="${1#*=}"
       shift
       ;;
     --namespace=*)
@@ -59,6 +64,25 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Update repo-config.json template_vars if fork is specified
+if [ -n "$fork" ]; then
+  log_info "Using fork: $fork"
+  REPO_CONFIG_FILE="$SCRIPT_DIR/../../repo-config.json"
+  if [ -f "$REPO_CONFIG_FILE" ]; then
+    # Extract fork-specific URLs and update template_vars
+    FORK_VARS=$(jq -r ".forks[\"$fork\"].template_vars" "$REPO_CONFIG_FILE")
+    if [ "$FORK_VARS" != "null" ]; then
+      # Create a temporary config with fork values in template_vars
+      jq ".template_vars = .forks[\"$fork\"].template_vars" "$REPO_CONFIG_FILE" > "${REPO_CONFIG_FILE}.tmp"
+      mv "${REPO_CONFIG_FILE}.tmp" "$REPO_CONFIG_FILE"
+      log_info "Updated repo-config.json to use fork: $fork"
+    else
+      log_error "Fork '$fork' not found in repo-config.json"
+      exit 1
+    fi
+  fi
+fi
 
 source "$SCRIPT_DIR/build/registry-management.sh"
 source "$SCRIPT_DIR/build/build-management.sh"
