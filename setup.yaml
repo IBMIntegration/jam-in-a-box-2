@@ -77,20 +77,20 @@ data:
     
     info "Installing required tools..."
     info "Available repositories:"
-    microdnf repolist
+    yum repolist
     info "Attempting to install packages..."
-    microdnf install -y git openssl curl tar gzip findutils procps-ng
+    yum install -y git openssl curl tar gzip findutils procps-ng
     
-    # Try to install jq, with fallback if not available in microdnf repos
+    # Try to install jq, with fallback if not available in yum repos
     info "Installing jq..."
-    if ! microdnf install -y jq 2>/dev/null; then
+    if ! yum install -y jq 2>/dev/null; then
       info "jq not available in microdnf repos, installing from GitHub releases..."
       curl -L "https://github.com/jqlang/jq/releases/latest/download/jq-linux64" \
         -o /usr/local/bin/jq
       chmod +x /usr/local/bin/jq
       success "jq installed from GitHub"
     else
-      success "jq installed via microdnf"
+      success "jq installed via yum"
     fi
     
     # Verify installations
