@@ -163,7 +163,7 @@ data:
     
     # Make KUBECONFIG and retry function available
     echo "export KUBECONFIG=/tmp/kubeconfig" >> /tmp/env_setup
-    echo "export PATH=/usr/local/bin:\$PATH" >> /tmp/env_setup
+    echo "export PATH=/usr/local/bin:/usr/bin:/bin:\$PATH" >> /tmp/env_setup
     
     # Define retry function in env_setup for use by this and other scripts
     cat >> /tmp/env_setup << 'EOF'
@@ -359,7 +359,9 @@ data:
         warning "OpenShift access failed"
       
       # Run main.sh with retry logic for resilience
-      if ! retry_command ./main.sh ${PARAMETERS}; then
+      # Ensure PATH is exported for subshells
+      export PATH="/usr/local/bin:$PATH"
+      if ! retry_command bash -c "source /tmp/env_setup && ./main.sh ${PARAMETERS}"; then
         error "main.sh failed after multiple retry attempts"
         SETUP_EXIT_CODE=1
       else
