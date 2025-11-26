@@ -80,8 +80,8 @@ function applyBuildConfiguration() {
   return 0
 }
 
-function buildMdHandlerApp() {
-  local appName buildName buildYamlPath buildYamlUrl
+function buildMaterialsHandlerApp() {
+  local appName buildName buildYamlPath
   
   log_header "Building Markdown Handler Application"
   
@@ -93,18 +93,8 @@ function buildMdHandlerApp() {
   materialsHandlerGitUrl=$(jq -r '.template_vars.MATERIALS_HANDLER_GIT_URL' \
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
-  # Convert git URL to raw GitHub URL for build.yaml
-  # Always use 'main' branch for build.yaml since individual repos don't have canary branches
-  buildYamlUrl=$(echo "$materialsHandlerGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/main/build.yaml
-  
   # Download build.yaml to temp location
-  buildYamlPath="/tmp/materials-handler-build.yaml"
-  log_debug "Fetching build.yaml from: $buildYamlUrl"
-  if ! curl -fsSL "$buildYamlUrl" -o "$buildYamlPath"; then
-    log_error "Failed to fetch build.yaml from $buildYamlUrl"
-    return 1
-  fi
-  
+  buildYamlPath="${SCRIPT_DIR}/build/build-materials-handler.yaml"
   buildName=""
   
   # Ensure internal registry is available
@@ -151,7 +141,7 @@ function buildMdHandlerApp() {
 }
 
 function buildNavigatorApp() {
-  local appName buildName buildYamlPath buildYamlUrl
+  local appName buildName buildYamlPath
   
   log_header "Building Navigator Application"
   
@@ -163,18 +153,8 @@ function buildNavigatorApp() {
   navigatorGitUrl=$(jq -r '.template_vars.NAVIGATOR_GIT_URL' \
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
-  # Convert git URL to raw GitHub URL for build.yaml
-  # Always use 'main' branch for build.yaml since individual repos don't have canary branches
-  buildYamlUrl=$(echo "$navigatorGitUrl" | sed 's|github.com|raw.githubusercontent.com|' | sed 's|\.git$||')/main/build.yaml
-  
   # Download build.yaml to temp location
-  buildYamlPath="/tmp/navigator-build.yaml"
-  log_debug "Fetching build.yaml from: $buildYamlUrl"
-  if ! curl -fsSL "$buildYamlUrl" -o "$buildYamlPath"; then
-    log_error "Failed to fetch build.yaml from $buildYamlUrl"
-    return 1
-  fi
-  
+  buildYamlPath="${SCRIPT_DIR}/build/build-navigator.yaml"
   buildName=""
   
   # Ensure internal registry is available

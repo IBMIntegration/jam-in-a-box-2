@@ -9,6 +9,7 @@ set -e
 function cleanup() {
   local resourceTypes globalParams
   
+  # shellcheck disable=SC2154
   if ! $doClean; then
     log_debug "Cleanup not requested, skipping"
     return 0
@@ -23,6 +24,7 @@ function cleanup() {
   resourceTypes=(deployment route service secret configmap pod)
   
   # Add PVC to cleanup only if not in quick mode
+  # shellcheck disable=SC2154
   if [[ "$quickMode" != true ]]; then
     resourceTypes+=(pvc build buildconfig imagestream)
     log_info "Full cleanup mode - including ${resourceTypes[*]}"

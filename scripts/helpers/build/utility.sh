@@ -7,7 +7,7 @@ set -e
 # =============================================================================
 
 function generate_password() {
-  local chars password i
+  local chars password _
   
   chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   password=""

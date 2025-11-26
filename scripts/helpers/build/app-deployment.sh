@@ -156,12 +156,12 @@ function setupMdHandler() {
   log_debug "Using app name: $NAME"
   
   # Build the md-handler app using S2I
-  if ! buildMdHandlerApp; then
+  if ! buildMaterialsHandlerApp; then
     log_error "Failed to build md-handler application"
     return 1
   fi
   
-  # The buildMdHandlerApp function already creates the ImageStream and BuildConfig
+  # The buildMaterialsHandlerApp function already creates the ImageStream and BuildConfig
   # Now we just need to create any additional resources that aren't part of the deployment
   
   log_success "MD Handler build and setup complete"
