@@ -96,10 +96,10 @@ function buildMaterialsHandlerApp() {
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   # Download build.yaml to temp location
-  buildYamlPath="${SCRIPT_DIR}/build/build-materials-handler.yaml"
+  buildYamlPath="${SCRIPT_DIR}/build/build-configs/build-materials-handler.yaml"
 
-  echo "buildYamlPath: $buildYamlPath"
-  head -n 20 "$buildYamlPath"
+  log_debug "buildYamlPath: $buildYamlPath"
+  log_debug "$(head -n 20 "$buildYamlPath")"
 
   buildName=""
   
@@ -157,10 +157,10 @@ function buildNavigatorApp() {
     "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
   
   # Download build.yaml to temp location
-  buildYamlPath="${SCRIPT_DIR}/build/build-navigator.yaml"
+  buildYamlPath="${SCRIPT_DIR}/build/build-configs/build-navigator.yaml"
 
-  echo "buildYamlPath: $buildYamlPath"
-  head -n 20 "$buildYamlPath"
+  log_debug "buildYamlPath: $buildYamlPath"
+  log_debug "$(head -n 20 "$buildYamlPath")"
 
   buildName=""
   
