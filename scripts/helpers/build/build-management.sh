@@ -149,7 +149,7 @@ function buildNavigatorApp() {
   log_header "Building Navigator Application"
   
   # Declare and initialize all local variables
-  appName="jam-navigator"
+  appName="navigator"
   
   # Get the navigator URL from repo-config
   local navigatorGitUrl

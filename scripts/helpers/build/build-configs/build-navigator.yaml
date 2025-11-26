@@ -13,7 +13,7 @@ metadata:
   name: build-navigator
   namespace: {{NAMESPACE}}
   labels:
-    app: navigator
+    app: build-navigator
 spec:
   source:
     type: Git
@@ -33,4 +33,3 @@ spec:
     - type: ConfigChange
     - type: ImageChange
   # Remove automatic Git webhook triggers since we want manual control
-  

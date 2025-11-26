@@ -109,17 +109,12 @@ function setupNavigatorApp() {
   fi
   
   # Step 2: Build materials-handler (S2I image with materials baked in)
-  if ! setupMdHandler; then
+  if ! setupMaterialsHandler; then
     log_error "Failed to setup materials-handler"
     return 1
   fi
   
-  # Step 3: Deploy and apply main deployment
-  if ! setupNginxAndDeploy; then
-    log_error "Failed to deploy application"
-    return 1
-  fi
-  
+  # Wait for all builds to complete
   for i in "${__build_management___builds[@]}"; do
     buildName="${i%%:*}"
     appName="${i##*:}"
@@ -131,6 +126,12 @@ function setupNavigatorApp() {
     fi
   done
 
+  # Step 3: Deploy and apply main deployment
+  if ! setupNginxAndDeploy; then
+    log_error "Failed to deploy application"
+    return 1
+  fi
+  
   log_success "Navigator Application setup completed successfully"
 }
 

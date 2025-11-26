@@ -149,7 +149,7 @@ spec:
           mountPath: /config/generated
       containers:
       - name: nginx
-        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-navigator:latest
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/navigator:latest
         imagePullPolicy: Always
         ports:
         - containerPort: {{PORT}}
@@ -167,7 +167,7 @@ spec:
         - name: runtime-data
           mountPath: /var/run
       - name: md-handler
-        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/jam-materials-handler:latest
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/materials-handler:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8081

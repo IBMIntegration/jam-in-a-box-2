@@ -141,14 +141,14 @@ function setupNavigator() {
     return 1
   fi
   
-  log_success "Navigator build and setup complete"
+  log_success "Navigator build under way"
   return 0
 }
 
-function setupMdHandler() {
+function setupMaterialsHandler() {
   local NAME
   
-  log_subheader "Setting up MD Handler resources"
+  log_subheader "Setting up Materials Handler resources"
   
   # Declare and initialize local variables
   NAME="${LABEL_APP}"
@@ -164,7 +164,7 @@ function setupMdHandler() {
   # The buildMaterialsHandlerApp function already creates the ImageStream and BuildConfig
   # Now we just need to create any additional resources that aren't part of the deployment
   
-  log_success "MD Handler build and setup complete"
+  log_success "Materials Handler build under way"
   return 0
 }
 
