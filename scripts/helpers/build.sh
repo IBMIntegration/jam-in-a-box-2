@@ -98,6 +98,8 @@ source "$SCRIPT_DIR/build/utility.sh"
 source "$SCRIPT_DIR/build/app-deployment.sh"
 
 function setupNavigatorApp() {
+  local buildName buildConfigName
+
   log_header "Starting Setup of Navigator Application"
   
   log_debug "Configuration - Password set: ${navigatorPassword:+yes}"
@@ -119,7 +121,7 @@ function setupNavigatorApp() {
     buildName="${i%%:*}"
     buildConfigName="${i##*:}"
     
-    log_info "Waiting for build completion: $buildName (app: $buildConfigName)"
+    log_info "Waiting for build completion: $buildName (build config: $buildConfigName)"
     if ! waitForBuildCompletion "$buildName" "$buildConfigName"; then
       log_error "Build $buildName for app $buildConfigName failed to complete"
       return 1
