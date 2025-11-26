@@ -89,6 +89,7 @@ function buildMaterialsHandlerApp() {
   
   # Declare and initialize all local variables
   appName="materials-handler"
+  buildConfigName="build-materials-handler"
   
   # Get the materials handler URL from repo-config
   local materialsHandlerGitUrl
@@ -127,7 +128,7 @@ function buildMaterialsHandlerApp() {
   fi
   
   # Start new build and get build name
-  if ! startNewBuild "$appName"; then
+  if ! startNewBuild "$buildConfigName"; then
     return 1
   fi
   buildName="$LAST_BUILD_NAME"
@@ -144,12 +145,13 @@ function buildMaterialsHandlerApp() {
 }
 
 function buildNavigatorApp() {
-  local appName buildName buildYamlPath
+  local appName buildName buildYamlPath buildConfigName
   
   log_header "Building Navigator Application"
   
   # Declare and initialize all local variables
   appName="navigator"
+  buildConfigName="build-navigator"
   
   # Get the navigator URL from repo-config
   local navigatorGitUrl
@@ -187,7 +189,7 @@ function buildNavigatorApp() {
   fi
   
   # Start new build and get build name
-  if ! startNewBuild "$appName"; then
+  if ! startNewBuild "$buildConfigName"; then
     return 1
   fi
   buildName="$LAST_BUILD_NAME"
@@ -260,13 +262,13 @@ function showBuildDiagnostics() {
 }
 
 function startNewBuild() {
-  local appName="$1"
+  local buildName="$1"
   local buildOutput buildName
   
-  log_subheader "Starting new build for $appName"
+  log_subheader "Starting new build for $buildName"
   
-  log_debug "Executing: oc start-build $appName -n $NAMESPACE"
-  buildOutput=$(oc start-build "$appName" -n "$NAMESPACE" 2>&1)
+  log_debug "Executing: oc start-build $buildName -n $NAMESPACE"
+  buildOutput=$(oc start-build "$buildName" -n "$NAMESPACE" 2>&1)
   
   if [[ $? -ne 0 ]]; then
     log_error "Failed to start build:"
