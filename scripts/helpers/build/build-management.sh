@@ -138,7 +138,7 @@ function buildMaterialsHandlerApp() {
     return 1
   fi
   
-  __build_management___builds+=("${buildName}:${appName}")
+  __build_management___builds+=("${buildName}:${buildConfigName}")
 
   log_success "Markdown Handler application build completed, build continues"
   return 0
@@ -200,7 +200,7 @@ function buildNavigatorApp() {
   fi
   
   # Wait for build completion
-  __build_management___builds+=("${buildName}:${appName}")
+  __build_management___builds+=("${buildName}:${buildConfigName}")
   
   log_success "Navigator application build completed, build continues"
   return 0
