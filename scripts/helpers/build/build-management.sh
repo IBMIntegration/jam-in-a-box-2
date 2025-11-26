@@ -26,6 +26,8 @@ function checkImageExists() {
   fi
 }
 
+__build_management___builds=()
+
 function applyBuildConfiguration() {
   local appName="$1"
   local yamlFile="$2" 
@@ -83,10 +85,10 @@ function applyBuildConfiguration() {
 function buildMaterialsHandlerApp() {
   local appName buildName buildYamlPath
   
-  log_header "Building Markdown Handler Application"
+  log_header "Building Materials Handler Application"
   
   # Declare and initialize all local variables
-  appName="jam-materials-handler"
+  appName="materials-handler"
   
   # Get the materials handler URL from repo-config
   local materialsHandlerGitUrl
@@ -95,6 +97,10 @@ function buildMaterialsHandlerApp() {
   
   # Download build.yaml to temp location
   buildYamlPath="${SCRIPT_DIR}/build/build-materials-handler.yaml"
+
+  echo "buildYamlPath: $buildYamlPath"
+  head -n 20 "$buildYamlPath"
+
   buildName=""
   
   # Ensure internal registry is available
@@ -131,12 +137,9 @@ function buildMaterialsHandlerApp() {
     return 1
   fi
   
-  # Wait for build completion
-  if ! waitForBuildCompletion "$buildName" "$appName"; then
-    return 1
-  fi
-  
-  log_success "Markdown Handler application build completed"
+  __build_management___builds+=("${buildName}:${appName}")
+
+  log_success "Markdown Handler application build completed, build continues"
   return 0
 }
 
@@ -155,6 +158,10 @@ function buildNavigatorApp() {
   
   # Download build.yaml to temp location
   buildYamlPath="${SCRIPT_DIR}/build/build-navigator.yaml"
+
+  echo "buildYamlPath: $buildYamlPath"
+  head -n 20 "$buildYamlPath"
+
   buildName=""
   
   # Ensure internal registry is available
@@ -191,11 +198,9 @@ function buildNavigatorApp() {
   fi
   
   # Wait for build completion
-  if ! waitForBuildCompletion "$buildName" "$appName"; then
-    return 1
-  fi
+  __build_management___builds+=("${buildName}:${appName}")
   
-  log_success "Navigator application build completed"
+  log_success "Navigator application build completed, build continues"
   return 0
 }
 

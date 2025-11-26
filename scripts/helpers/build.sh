@@ -120,6 +120,17 @@ function setupNavigatorApp() {
     return 1
   fi
   
+  for i in "${__build_management___builds[@]}"; do
+    buildName="${i%%:*}"
+    appName="${i##*:}"
+    
+    log_info "Waiting for build completion: $buildName (app: $appName)"
+    if ! waitForBuildCompletion "$buildName" "$appName"; then
+      log_error "Build $buildName for app $appName failed to complete"
+      return 1
+    fi
+  done
+
   log_success "Navigator Application setup completed successfully"
 }
 
