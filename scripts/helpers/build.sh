@@ -118,11 +118,13 @@ function setupNavigatorApp() {
   
   # Wait for all builds to complete
   for i in "${__build_management___builds[@]}"; do
-    buildName="${i%%:*}"
-    buildConfigName="${i##*:}"
+    buildConfigName="${i%%:*}"
+    buildName="${i##*:}"
     
-    log_info "Waiting for build completion: $buildName (build config: $buildConfigName)"
-    if ! waitForBuildCompletion "$buildName" "$buildConfigName"; then
+    log_info "Waiting for build completion: $i"
+    log_debug "Build Config Name: $buildConfigName"
+    log_debug "Build Name: $buildName"
+    if ! waitForBuildCompletion "$buildConfigName" "$buildName"; then
       log_error "Build $buildName for app $buildConfigName failed to complete"
       return 1
     fi

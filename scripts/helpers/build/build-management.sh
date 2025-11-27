@@ -34,14 +34,10 @@ function applyBuildConfiguration() {
   local buildYaml
   local materialsGitUrl materialsHandlerGitUrl navigatorGitUrl repoGitUrl
   
-  repoGitUrl=$(jq -r '.template_vars.REPO_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
-  materialsHandlerGitUrl=$(jq -r '.template_vars.MATERIALS_HANDLER_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
-  materialsGitUrl=$(jq -r '.template_vars.MATERIALS_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
-  navigatorGitUrl=$(jq -r '.template_vars.NAVIGATOR_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  repoGitUrl=$(getBuildMaterialsVar REPO_GIT_URL)
+  materialsHandlerGitUrl=$(getBuildMaterialsVar MATERIALS_HANDLER_GIT_URL)
+  materialsGitUrl=$(getBuildMaterialsVar MATERIALS_GIT_URL)
+  navigatorGitUrl=$(getBuildMaterialsVar NAVIGATOR_GIT_URL)
   
   log_subheader "Applying build configuration for $appName"
   
@@ -82,8 +78,29 @@ function applyBuildConfiguration() {
   return 0
 }
 
+function getBuildMaterialsVar {
+  local varName="$1"
+  local value
+  
+  if [ -n "${fork}" ]; then
+    value=$(jq --arg v "${varName}" --arg f "${fork}" \
+      '.forks[$f].template_vars[$v]' \
+      "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+    if [ "$value" != "null" ] && [ -n "$value" ]; then
+      echo "$value" | jq -r .
+      return
+    fi
+  fi
+
+  value=$(jq -r --arg VAR_NAME "$varName" \
+    '.template_vars[$VAR_NAME]' \
+    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  
+  echo "$value"
+}
+
 function buildMaterialsHandlerApp() {
-  local appName buildName buildYamlPath
+  local appName buildName buildYamlPath buildRecord
   
   log_header "Building Materials Handler Application"
   
@@ -93,8 +110,7 @@ function buildMaterialsHandlerApp() {
   
   # Get the materials handler URL from repo-config
   local materialsHandlerGitUrl
-  materialsHandlerGitUrl=$(jq -r '.template_vars.MATERIALS_HANDLER_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  materialsHandlerGitUrl=$(getBuildMaterialsVar MATERIALS_HANDLER_GIT_URL)
   
   # Download build.yaml to temp location
   buildYamlPath="${SCRIPT_DIR}/build/build-configs/build-materials-handler.yaml"
@@ -123,7 +139,7 @@ function buildMaterialsHandlerApp() {
   fi
   
   # Clean up existing builds
-  if ! cleanupExistingBuilds "$appName"; then
+  if ! cleanupExistingBuilds "$buildConfigName"; then
     return 1
   fi
   
@@ -138,14 +154,16 @@ function buildMaterialsHandlerApp() {
     return 1
   fi
   
-  __build_management___builds+=("${buildName}:${buildConfigName}")
+  buildRecord="$buildConfigName:$buildName"
+  log_debug "Build record: $buildRecord"
+  __build_management___builds+=("$buildRecord")
 
   log_success "Markdown Handler application build completed, build continues"
   return 0
 }
 
 function buildNavigatorApp() {
-  local appName buildName buildYamlPath buildConfigName
+  local appName buildName buildYamlPath buildConfigName buildRecord
   
   log_header "Building Navigator Application"
   
@@ -155,8 +173,7 @@ function buildNavigatorApp() {
   
   # Get the navigator URL from repo-config
   local navigatorGitUrl
-  navigatorGitUrl=$(jq -r '.template_vars.NAVIGATOR_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  navigatorGitUrl=$(getBuildMaterialsVar NAVIGATOR_GIT_URL)
   
   # Download build.yaml to temp location
   buildYamlPath="${SCRIPT_DIR}/build/build-configs/build-navigator.yaml"
@@ -184,7 +201,7 @@ function buildNavigatorApp() {
   fi
   
   # Clean up existing builds
-  if ! cleanupExistingBuilds "$appName"; then
+  if ! cleanupExistingBuilds "$buildConfigName"; then
     return 1
   fi
   
@@ -200,19 +217,21 @@ function buildNavigatorApp() {
   fi
   
   # Wait for build completion
-  __build_management___builds+=("${buildName}:${buildConfigName}")
+  buildRecord="$buildConfigName:$buildName"
+  log_debug "Build record: $buildRecord"  
+  __build_management___builds+=("$buildRecord")
   
   log_success "Navigator application build completed, build continues"
   return 0
 }
 
 function cleanupExistingBuilds() {
-  local appName="$1"
+  local buildConfigName="$1"
   
-  log_subheader "Cleaning up existing builds for $appName"
+  log_subheader "Cleaning up existing builds for $buildConfigName"
   
-  log_debug "Deleting builds with label buildconfig=$appName"
-  if ! oc delete builds -l buildconfig="$appName" -n "$NAMESPACE" --ignore-not-found=true; then
+  log_debug "Deleting builds with label buildconfig=$buildConfigName"
+  if ! oc delete builds -l buildconfig="$buildConfigName" -n "$NAMESPACE" --ignore-not-found=true; then
     log_error "Failed to cleanup existing builds"
     return 1
   fi
@@ -262,13 +281,13 @@ function showBuildDiagnostics() {
 }
 
 function startNewBuild() {
-  local buildName="$1"
+  local buildConfigName="$1"
   local buildOutput buildName
   
-  log_subheader "Starting new build for $buildName"
+  log_subheader "Starting new build for $buildConfigName"
   
-  log_debug "Executing: oc start-build $buildName -n $NAMESPACE"
-  buildOutput=$(oc start-build "$buildName" -n "$NAMESPACE" 2>&1)
+  log_debug "Executing: oc start-build $buildConfigName -n $NAMESPACE"
+  buildOutput=$(oc start-build "$buildConfigName" -n "$NAMESPACE" 2>&1)
   
   if [[ $? -ne 0 ]]; then
     log_error "Failed to start build:"
@@ -277,7 +296,9 @@ function startNewBuild() {
   fi
   
   # Extract build name from output like "build.build.openshift.io/md-handler-1 started"
-  buildName=$(echo "$buildOutput" | grep -o "${appName}-[0-9]*" | head -1)
+  buildName=$(echo "$buildOutput" | \
+    grep -E " started$" | head -n 1 | \
+    sed -e 's/build.build.openshift.io\/\([^ ]*\) started/\1/')
   
   if [[ -z "$buildName" ]]; then
     log_error "Could not determine build name from output: $buildOutput"
@@ -291,11 +312,11 @@ function startNewBuild() {
 }
 
 function waitForBuildCompletion() {
-  local buildName="$1"
-  local appName="$2"
+  local buildConfigName="$1"
+  local buildName="$2"
   local buildStatus imageSha
   
-  log_subheader "Waiting for build completion: $buildName"
+  log_subheader "Waiting for build completion: $buildName (config: $buildConfigName)"
   
   log_info "Waiting for build to complete (timeout: 10 minutes)..."
   
@@ -315,7 +336,7 @@ function waitForBuildCompletion() {
         ;;
       Failed|Error|Cancelled)
         log_error "Build failed with status: $buildStatus"
-        showBuildDiagnostics "$buildName" "$appName"
+        showBuildDiagnostics "$buildConfigName" "$buildName"
         return 1
         ;;
       New|Pending|Running)
@@ -340,7 +361,9 @@ function waitForBuildCompletion() {
     
     # Verify image is available
     log_debug "Checking if image is available in ImageStream"
-    imageSha=$(oc get imagestream "$appName" -n "$NAMESPACE" \
+    imageStreamTag=$(oc get build "$buildName" -n "$NAMESPACE" \
+      -o jsonpath='{.status.output.to.name}' 2>/dev/null || echo "")
+    imageSha=$(oc get imagestream "${imageStreamTag%%:*}" -n "$NAMESPACE" \
       -o jsonpath='{.status.tags[0].items[0].image}' 2>/dev/null || echo "")
     if [[ -n "$imageSha" ]]; then
       log_success "Image available: ${imageSha:0:12}..."

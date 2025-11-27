@@ -40,9 +40,8 @@ oc new-project jam-in-a-box
 ### 2. Create ConfigMap with Parameters
 
 ```bash
-oc create configmap jam-setup-params \
-  --from-literal=parameters="--fork=<your-github-org> --navigator-password=<password> --canary=<branch>" \
-  -n jam-in-a-box
+oc create configmap jam-setup-params -n default \
+  --from-literal=parameters="--fork=<your-github-org> --navigator-password=<password> --canary=<branch>"
 ```
 
 **Parameters:**

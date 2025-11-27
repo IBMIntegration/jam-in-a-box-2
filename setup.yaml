@@ -244,7 +244,27 @@ data:
     
     # Wait a bit more for the registry to stabilize after state changes
     info "Waiting for registry to stabilize..."
-    sleep 30
+    max_attempts=20
+    for i in {1..20}; do
+      READY_REPLICAS=$(retry_command kubectl get deployment \
+      image-registry -n openshift-image-registry \
+      -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+      DESIRED_REPLICAS=$(retry_command kubectl get deployment \
+      image-registry -n openshift-image-registry \
+      -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "1")
+      
+      if [ "$READY_REPLICAS" = "$DESIRED_REPLICAS" ] && [ "$READY_REPLICAS" != "0" ]; then
+      success "Registry is stable with $READY_REPLICAS/$DESIRED_REPLICAS replicas ready"
+      break
+      else
+      info "Registry replicas: $READY_REPLICAS/$DESIRED_REPLICAS ready (attempt $i/20)"
+      sleep 5
+      fi
+    done
+    
+    if [ "$READY_REPLICAS" != "$DESIRED_REPLICAS" ]; then
+      warning "Registry may not be fully stable, but continuing..."
+    fi
 
   repo-clone.sh: |
     #!/bin/bash
@@ -254,56 +274,69 @@ data:
     source /scripts/logs.sh
     source /tmp/env_setup
     
-    # Check for optional parameters ConfigMap first
-    info "Checking for custom parameters..."
-    PARAMETERS=""
-    if kubectl get configmap jam-setup-params -n default 2>/dev/null; then
-      info "Found custom parameters ConfigMap"
-      PARAMETERS=$(kubectl get configmap jam-setup-params -n default \
-        -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
-    else
-      info "No custom parameters found, using defaults"
-    fi
-    
-    info "Parameters to use: ${PARAMETERS:-'(none)'}"
-    
-    # Determine which branch to clone based on parameters
-    BRANCH="main"
-    if [[ "$PARAMETERS" == *"--canary="* ]]; then
-      BRANCH=$(echo "$PARAMETERS" | grep -oP '(?<=--canary=)[^ ]+')
-      info "Using branch: $BRANCH (from --canary parameter)"
-    elif [[ "$PARAMETERS" == *"--canary"* ]]; then
-      BRANCH="canary"
-      info "Using canary branch based on --canary parameter"
-    else
-      info "Using main branch (default)"
-    fi
-    
-    # Get the repository URL from repo-config.json
-    repoUrl=""
-    curl -L https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/refs/heads/main/repo-config.json \
-      -o repo-config.json 2>/dev/null
-    repoUrl="$(cat repo-config.json | jq -r '.template_vars.REPO_GIT_URL')"
-    if [[ "$PARAMETERS" == *"--fork="* ]]; then
-      FORK_NAME=$(echo "$PARAMETERS" | grep -oP '(?<=--fork=)[^ ]+')
-      FORK_REPO_URL=$(cat repo-config.json | \
-        jq -r --arg FORK_NAME "$FORK_NAME" \
-        '.forks[$FORK_NAME].template_vars.REPO_GIT_URL // empty')
-      if [ -n "$FORK_REPO_URL" ]; then
-        repoUrl="$FORK_REPO_URL"
-        info "Using fork repository URL: $repoUrl"
-      else
-        info "Fork '$FORK_NAME' not found in repo-config.json, using default repository"
-      fi
-    fi
+    # Check if archive-helper pod exists in jam-in-a-box namespace
+    if kubectl get service archive-helper -n jam-in-a-box >/dev/null 2>&1; then
 
-    # Clone the repository with the determined branch
-    info "Cloning repository from branch: $BRANCH"
-    rm -rf .git ./* .[^.]* 2>/dev/null || true
-    git clone -b $BRANCH $repoUrl .
+      warning "Found archive-helper service, using archive extraction method"
     
-    info "Repository cloned successfully. Contents:"
-    ls -la
+      ARCHIVE_URL=http://archive-helper.jam-in-a-box.svc.cluster.local/jam-in-a-box.tar
+      info "Downloading repository archive from: $ARCHIVE_URL"
+      
+      # Download and extract the tarball
+      curl -L "$ARCHIVE_URL" | tar -xf - --strip-components=1
+      
+      success "Repository archive downloaded and extracted"
+      info "Repository contents:"
+      ls -la
+      
+      # Make scripts executable
+      info "Setting up permissions..."
+      find . -name "*.sh" -exec chmod +x {} \;
+      chmod +x main.sh
+      
+      # Export PARAMETERS for main.sh
+      echo "export PARAMETERS='${PARAMETERS}'" >> /tmp/env_setup
+
+    else
+
+      # Determine which branch to clone based on parameters
+      BRANCH="main"
+      if [[ "$PARAMETERS" == *"--canary="* ]]; then
+        BRANCH=$(echo "$PARAMETERS" | grep -oP '(?<=--canary=)[^ ]+')
+        info "Using branch: $BRANCH (from --canary parameter)"
+      elif [[ "$PARAMETERS" == *"--canary"* ]]; then
+        BRANCH="canary"
+        info "Using canary branch based on --canary parameter"
+      else
+        info "Using main branch (default)"
+      fi
+      
+      # Get the repository URL from repo-config.json
+      repoUrl=""
+      curl -L https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/refs/heads/main/repo-config.json \
+        -o repo-config.json 2>/dev/null
+      repoUrl="$(cat repo-config.json | jq -r '.template_vars.REPO_GIT_URL')"
+      if [[ "$PARAMETERS" == *"--fork="* ]]; then
+        FORK_NAME=$(echo "$PARAMETERS" | grep -oP '(?<=--fork=)[^ ]+')
+        FORK_REPO_URL=$(cat repo-config.json | \
+          jq -r --arg FORK_NAME "$FORK_NAME" \
+          '.forks[$FORK_NAME].template_vars.REPO_GIT_URL // empty')
+        if [ -n "$FORK_REPO_URL" ]; then
+          repoUrl="$FORK_REPO_URL"
+          info "Using fork repository URL: $repoUrl"
+        else
+          info "Fork '$FORK_NAME' not found in repo-config.json, using default repository"
+        fi
+      fi
+
+      # Clone the repository with the determined branch
+      info "Cloning repository from branch: $BRANCH"
+      rm -rf .git ./* .[^.]* 2>/dev/null || true
+      git clone -b $BRANCH $repoUrl .
+      
+      info "Repository cloned successfully. Contents:"
+      ls -la
+    fi
     
     # Make scripts executable
     info "Setting up permissions..."
@@ -318,8 +351,21 @@ data:
     # Main setup orchestration script
     set -e
     
-    echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
+    # Check for optional parameters ConfigMap first
+    info "Checking for custom parameters..."
+    PARAMETERS=""
+    if kubectl get configmap jam-setup-params -n default 2>/dev/null; then
+      info "Found custom parameters ConfigMap"
+      PARAMETERS=$(kubectl get configmap jam-setup-params -n default \
+        -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+    else
+      info "No custom parameters found, using defaults"
+    fi
     
+    info "Parameters to use: ${PARAMETERS:-'(none)'}"
+
+    echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
+
     # Source logging functions
     source /scripts/logs.sh
     
