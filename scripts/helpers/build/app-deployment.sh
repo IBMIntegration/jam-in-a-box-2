@@ -17,10 +17,8 @@ function applyMainDeployment() {
   local output remaining
   local repoGitUrl repoRawBaseUrl
 
-  repoGitUrl=$(jq -r '.template_vars.REPO_GIT_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
-  repoRawBaseUrl=$(jq -r '.template_vars.REPO_RAW_BASE_URL' \
-    "$SCRIPT_DIR/../../repo-config.json" 2>/dev/null || echo "")
+  repoGitUrl=$(getBuildMaterialsVar REPO_GIT_URL)
+  repoRawBaseUrl=$(getBuildMaterialsVar REPO_RAW_BASE_URL)
   
   log_debug "Processing deployment template: $yamlFile"
   

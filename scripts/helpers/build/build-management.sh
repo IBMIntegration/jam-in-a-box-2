@@ -82,6 +82,9 @@ function getBuildMaterialsVar {
   local varName="$1"
   local value
   
+  log_debug "Retrieving build materials variable: $varName"
+  log_debug "Using fork: ${fork:-'(none)'}"
+
   if [ -n "${fork}" ]; then
     value=$(jq --arg v "${varName}" --arg f "${fork}" \
       '.forks[$f].template_vars[$v]' \

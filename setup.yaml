@@ -289,14 +289,6 @@ data:
       info "Repository contents:"
       ls -la
       
-      # Make scripts executable
-      info "Setting up permissions..."
-      find . -name "*.sh" -exec chmod +x {} \;
-      chmod +x main.sh
-      
-      # Export PARAMETERS for main.sh
-      echo "export PARAMETERS='${PARAMETERS}'" >> /tmp/env_setup
-
     else
 
       # Determine which branch to clone based on parameters
@@ -343,29 +335,11 @@ data:
     find . -name "*.sh" -exec chmod +x {} \;
     chmod +x main.sh
     
-    # Export PARAMETERS for main.sh
-    echo "export PARAMETERS='${PARAMETERS}'" >> /tmp/env_setup
-
   setup.sh: |
     #!/bin/bash
     # Main setup orchestration script
     set -e
     
-    # Check for optional parameters ConfigMap first
-    info "Checking for custom parameters..."
-    PARAMETERS=""
-    if kubectl get configmap jam-setup-params -n default 2>/dev/null; then
-      info "Found custom parameters ConfigMap"
-      PARAMETERS=$(kubectl get configmap jam-setup-params -n default \
-        -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
-    else
-      info "No custom parameters found, using defaults"
-    fi
-    
-    info "Parameters to use: ${PARAMETERS:-'(none)'}"
-
-    echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
-
     # Source logging functions
     source /scripts/logs.sh
     
@@ -377,6 +351,23 @@ data:
     
     # Configure authentication
     /scripts/auth-config.sh
+
+    # Check for optional parameters ConfigMap first
+    info "Checking for custom parameters..."
+    PARAMETERS=""
+    if kubectl get configmap jam-setup-params -n default; then
+      info "Found custom parameters ConfigMap"
+      PARAMETERS=$(kubectl get configmap jam-setup-params -n default \
+        -o jsonpath='{.data.parameters}' 2>/dev/null || echo "")
+    else
+      info "No custom parameters found, using defaults"
+    fi
+    
+    info "Parameters to use: ${PARAMETERS:-'(none)'}"
+    echo "export PARAMETERS='${PARAMETERS}'" >> /tmp/env_setup
+
+
+    echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
     
     # Check registry readiness
     /scripts/registry-check.sh
@@ -396,6 +387,7 @@ data:
       source /tmp/env_setup
       
       info "Executing: ./main.sh ${PARAMETERS}"
+      info "/tmp/env_setup: $(cat /tmp/env_setup)"
       
       # Debug: Show current authentication status before running main.sh
       info "Debug: Current authentication status:"
