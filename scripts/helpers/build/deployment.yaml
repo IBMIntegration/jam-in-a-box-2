@@ -58,6 +58,11 @@ data:
           ssi on;
           auth_basic "Restricted Area";
         }
+        # No authentication for anything under /includes
+        # Use ^~ to prevent the regex-based html location from overriding this rule
+        location ^~ /includes/ {
+          auth_basic off;
+        }
         
         # Everything else requires auth (including index.html)
         location / {
@@ -129,6 +134,9 @@ spec:
     spec:
       initContainers:
       - name: setup
+        env:
+        - name: MATERIALS_GIT_URL
+          value: "{{MATERIALS_GIT_URL}}"
         image: registry.redhat.io/ubi8/nodejs-20:latest
         command: ["/bin/sh", "-c"]
         args:
@@ -136,6 +144,8 @@ spec:
           set -e
           echo "Running config generator script..."
           node /scripts-init/config-generator.js
+          echo "Running load materials script..."
+          bash /scripts-init/load-materials.sh
         volumeMounts:
         - name: setup-config
           mountPath: /scripts-init
@@ -147,25 +157,9 @@ spec:
           subPath: secret.json
         - name: generated-configs
           mountPath: /config/generated
+        - name: materials
+          mountPath: /materials
       containers:
-      - name: nginx
-        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/navigator:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: {{PORT}}
-        volumeMounts:
-        - name: nginx-config
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
-        - name: htpasswd
-          mountPath: /etc/nginx/.htpasswd
-          subPath: .htpasswd
-        - name: generated-configs
-          mountPath: /usr/share/nginx/html/config
-        - name: nginx-cache
-          mountPath: /var/cache/nginx
-        - name: runtime-data
-          mountPath: /var/run
       - name: md-handler
         image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/materials-handler:latest
         imagePullPolicy: Always
@@ -187,9 +181,13 @@ spec:
           value: "8082"
         - name: ADMIN_HOST
           value: "0.0.0.0"
+        - name: INCLUDES_SERVICE_PORT
+          value: "{{PORT}}"
         volumeMounts:
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
+        - name: materials
+          mountPath: /materials
         livenessProbe:
           httpGet:
             path: /health
@@ -210,6 +208,24 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         workingDir: /opt/app-root/src
+      - name: nginx
+        image: image-registry.openshift-image-registry.svc:5000/jam-in-a-box/navigator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{PORT}}
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: htpasswd
+          mountPath: /etc/nginx/.htpasswd
+          subPath: .htpasswd
+        - name: generated-configs
+          mountPath: /usr/share/nginx/html/config
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: runtime-data
+          mountPath: /var/run
       volumes:
       - name: nginx-config
         configMap:
@@ -228,6 +244,9 @@ spec:
       - name: setup-secrets
         secret:
           secretName: setup-secrets
+      - name: materials
+        persistentVolumeClaim:
+          claimName: materials-pvc
       - name: nginx-cache
         emptyDir: {}
       - name: runtime-data

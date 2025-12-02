@@ -12,6 +12,24 @@ POD_NAME="archive-helper"
 ARCHIVE_NAME="jam-in-a-box.tar"
 ARCHIVE_PATH="/tmp/${ARCHIVE_NAME}"
 UPLOAD_DIR="/usr/share/nginx/html"
+MATERIALS_DIR="$(cd "$REPO_DIR/../jam-materials" && pwd)"
+
+isCopyMaterials=false
+for arg in "$@"; do
+  case $arg in
+    --copy-materials)
+      isCopyMaterials=true
+      shift
+      ;;
+    --namespace=*)
+      NAMESPACE="${arg#*=}"
+      shift
+      ;;
+    *)
+      ;;
+  esac
+done
+
 
 echo "==> Creating archive of integration-jam-in-a-box..."
 cd "$REPO_DIR"
@@ -41,7 +59,11 @@ if oc get pod "$POD_NAME" -n "$NAMESPACE" &>/dev/null; then
   fi
 else
   echo "==> Creating nginx pod with emptyDir volume..."
-  
+
+  pvcYaml="$(cat "${SCRIPT_DIR}/helpers/build/pvc.yaml")"
+  pvcYaml="${pvcYaml//\{\{NAMESPACE\}\}/$NAMESPACE}"
+  echo "$pvcYaml" | oc apply -n "$NAMESPACE" -f -
+
   cat <<EOF | oc apply -n "$NAMESPACE" -f -
 apiVersion: v1
 kind: Pod
@@ -59,10 +81,15 @@ spec:
     volumeMounts:
     - name: archive-storage
       mountPath: /usr/share/nginx/html
+    - name: materials-storage
+      mountPath: /materials
   volumes:
   - name: archive-storage
     emptyDir:
       sizeLimit: 1Gi
+  - name: materials-storage
+    persistentVolumeClaim:
+      claimName: materials-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -94,6 +121,18 @@ echo "==> Archive successfully copied to pod: $ARCHIVE_NAME ($REMOTE_SIZE)"
 
 echo "==> Listing contents of $UPLOAD_DIR in pod:"
 oc exec "$POD_NAME" -n "$NAMESPACE" -- ls -lh "$UPLOAD_DIR"
+
+if [ "$isCopyMaterials" = true ]; then
+  echo "==> Copying materials to pod..."
+  if [ -d "$MATERIALS_DIR" ]; then
+    echo "==> Materials directory found: $MATERIALS_DIR"
+    oc rsync "$MATERIALS_DIR/" "$POD_NAME:/materials" -n "$NAMESPACE"
+  else
+    echo "==> Error: Materials directory not found: $MATERIALS_DIR"
+  fi
+  echo "==> Materials copied to pod."
+fi
+
 echo ""
 echo "==> Done! Archive deployed to pod $POD_NAME in namespace $NAMESPACE"
 echo "==> To access the pod:"

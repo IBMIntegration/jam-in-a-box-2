@@ -12,19 +12,22 @@ function applyMainDeployment() {
   local PASSWORD="$3"
   local USERNAME_BASE64="$4"
   local PASSWORD_BASE64="$5"
-  local yamlFile="$6"
-  local PORT="$7"
+  local PORT="$6"
+  shift 6
+  local yamlFiles=("$@")
   local output remaining
-  local repoGitUrl repoRawBaseUrl
+  local repoGitUrl repoRawBaseUrl materialsGitUrl
 
   repoGitUrl=$(getBuildMaterialsVar REPO_GIT_URL)
   repoRawBaseUrl=$(getBuildMaterialsVar REPO_RAW_BASE_URL)
+  materialsGitUrl=$(getBuildMaterialsVar MATERIALS_GIT_URL)
+
   
-  log_debug "Processing deployment template: $yamlFile"
+  log_debug "Processing deployment templates: ${yamlFiles[*]}"
   
   # Apply template with substitutions
   # Use safe bash string replacement instead of sed to avoid delimiter conflicts
-  output=$(cat "$yamlFile")
+  output=$(cat "${yamlFiles[@]}")
   output="${output//\{\{NAME\}\}/$NAME}"
   output="${output//\{\{NAMESPACE\}\}/$NAMESPACE}"
   output="${output//\{\{USERNAME\}\}/$USERNAME}"
@@ -38,6 +41,7 @@ function applyMainDeployment() {
   output="${output//\{\{GIT_BRANCH\}\}/$GIT_BRANCH}"
   output="${output//\{\{REPO_GIT_URL\}\}/$repoGitUrl}"
   output="${output//\{\{REPO_RAW_BASE_URL\}\}/$repoRawBaseUrl}"
+  output="${output//\{\{MATERIALS_GIT_URL\}\}/$materialsGitUrl}"
 
   # Check for any remaining {{}} variables
   remaining=$(echo "$output" | grep -o '{{[^}]*}}' || true)
@@ -74,13 +78,15 @@ function createScriptsConfigMaps() {
   
   # Config generator is in the same directory as this script (scripts/helpers/build/)
   scriptPath="$SCRIPT_DIR/build/config-generator.js"
+  loadMaterialsScriptPath="$SCRIPT_DIR/load-materials.sh"
   
-  log_debug "Creating scripts configmaps from $scriptPath"
+  log_debug "Creating scripts configmaps from $scriptPath and $loadMaterialsScriptPath"
   
   # Create config generator script configmap
   oc create configmap "${NAME}-scripts-init" \
     --namespace="$NAMESPACE" \
     --from-file="$scriptPath" \
+    --from-file="$loadMaterialsScriptPath" \
     --dry-run=client -o yaml | \
     oc label --local -f - app="$LABEL_APP" -o yaml | \
     oc apply -f -
@@ -167,17 +173,17 @@ function setupMaterialsHandler() {
 }
 
 function setupNginxAndDeploy() {
-  local NAME yamlFile PORT
+  local NAME yamlFiles PORT
   local credentials USERNAME PASSWORD USERNAME_BASE64 PASSWORD_BASE64
   
   log_subheader "Setting up nginx and deploying application"
   
   # Declare and initialize all local variables
   NAME="${LABEL_APP}"
-  yamlFile="$SCRIPT_DIR/build/deployment.yaml"
+  yamlFiles=("$SCRIPT_DIR/build/deployment.yaml" "$SCRIPT_DIR/build/pvc.yaml")
   PORT=8088
   
-  log_debug "Using deployment template: $yamlFile"
+  log_debug "Using deployment templates: ${yamlFiles[*]}"
   
   # Generate authentication credentials
   credentials=$(generateAuthCredentials)
@@ -209,7 +215,9 @@ function setupNginxAndDeploy() {
   fi
   
   # Apply main deployment
-  if ! applyMainDeployment "$NAME" "$USERNAME" "$PASSWORD" "$USERNAME_BASE64" "$PASSWORD_BASE64" "$yamlFile" "$PORT"; then
+  if ! applyMainDeployment "$NAME" "$USERNAME" "$PASSWORD" "$USERNAME_BASE64" \
+    "$PASSWORD_BASE64" "$PORT" "${yamlFiles[@]}"
+  then
     log_error "Failed to apply main deployment"
     return 1
   fi
