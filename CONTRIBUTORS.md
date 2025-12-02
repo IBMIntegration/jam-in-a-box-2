@@ -83,7 +83,7 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --canary"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --fork=capnajax"
     ```
 
     The parameters are:

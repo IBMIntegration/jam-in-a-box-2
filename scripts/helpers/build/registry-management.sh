@@ -23,48 +23,113 @@ function checkRegistryOperator() {
   
   log_debug "Checking registry storage configuration"
   storageConfigured=$(oc get config.imageregistry cluster -o jsonpath='{.spec.storage}' 2>/dev/null || echo "{}")
-  
+
   if [[ "$registryAvailable" != "True" ]]; then
     log_error "Registry operator found but not available (status: $registryAvailable)"
     return 1
   fi
-  
+
   if [[ "$managementState" != "Managed" ]]; then
     log_error "Registry management state is not 'Managed' (current: $managementState)"
     return 1
   fi
-  
+
   if [[ "$storageConfigured" == "{}" ]]; then
     log_error "Registry storage is not configured"
     return 1
   fi
-  
-  log_debug "Registry operator is available and properly configured"
+
+  # Check for persistent storage (PVC)
+  if ! echo "$storageConfigured" | grep -q 'pvc'; then
+    log_error "Registry storage is not set to PVC (persistent storage)"
+    return 1
+  fi
+
+  log_debug "Registry operator is available and properly configured for persistent storage (PVC)"
   log_debug "Management state: $managementState"
   log_debug "Storage config: $storageConfigured"
   return 0
 }
 
 function enableInternalRegistry() {
-  log_subheader "Enabling internal registry with storage"
-  
-  log_debug "Patching registry config to Managed state with emptyDir storage"
-  if ! oc patch config.imageregistry cluster --type merge --patch='{"spec":{"managementState":"Managed","storage":{"emptyDir":{}}}}'; then
-    log_error "Failed to patch registry configuration"
+  log_subheader "Enabling internal registry with persistent storage (PVC)"
+
+  log_debug "Patching registry config to Managed state with PVC storage (default StorageClass)"
+  if ! oc patch config.imageregistry cluster --type merge --patch='{"spec":{"managementState":"Managed","storage":{"pvc":{}}}}'; then
+    log_error "Failed to patch registry configuration for PVC storage"
     return 1
   fi
-  
-  log_info "Waiting for registry to become available (up to 5 minutes)..."
-  if ! oc wait --for=condition=Available clusteroperator/image-registry --timeout=300s; then
-    log_error "Registry failed to become available within timeout"
+
+  # Wait for PVC to be created and bound
+  log_info "Waiting for PVC to be created (up to 3 minutes)..."
+  local pvc_created=false
+  for i in {1..36}; do
+    if oc get pvc -n openshift-image-registry 2>/dev/null | grep -q "image-registry-storage"; then
+      pvc_created=true
+      log_debug "PVC created, waiting for it to be bound..."
+      break
+    fi
+    sleep 5
+  done
+
+  if [[ "$pvc_created" == "false" ]]; then
+    log_error "PVC was not created within timeout"
     return 1
   fi
-  
-  # Additional wait for registry to be truly ready for builds
-  log_info "Waiting for registry deployment to stabilize..."
-  sleep 30
-  
-  log_success "Registry is now available"
+
+  # Wait for PVC to be bound
+  log_info "Waiting for PVC to be bound (up to 5 minutes)..."
+  if ! oc wait --for=jsonpath='{.status.phase}'=Bound pvc/image-registry-storage -n openshift-image-registry --timeout=300s 2>/dev/null; then
+    log_error "PVC failed to bind within timeout"
+    log_debug "PVC status:"
+    oc describe pvc image-registry-storage -n openshift-image-registry 2>/dev/null || true
+    return 1
+  fi
+
+  log_success "PVC is bound and ready"
+
+  # Wait for registry deployment to be created
+  log_info "Waiting for registry deployment to be created (up to 2 minutes)..."
+  local deploy_created=false
+  for i in {1..24}; do
+    if oc get deployment image-registry -n openshift-image-registry >/dev/null 2>&1; then
+      deploy_created=true
+      log_debug "Registry deployment created"
+      break
+    fi
+    sleep 5
+  done
+
+  if [[ "$deploy_created" == "false" ]]; then
+    log_error "Registry deployment was not created within timeout"
+    return 1
+  fi
+
+  # Wait for registry pod to be ready
+  log_info "Waiting for registry pod to be ready (up to 5 minutes)..."
+  if ! oc rollout status deployment/image-registry -n openshift-image-registry --timeout=300s; then
+    log_error "Registry deployment failed to become ready"
+    log_debug "Pod status:"
+    oc get pods -n openshift-image-registry -l docker-registry=default 2>/dev/null || true
+    log_debug "Pod events:"
+    oc get events -n openshift-image-registry --sort-by=.metadata.creationTimestamp | tail -20 || true
+    return 1
+  fi
+
+  log_success "Registry pod is ready"
+
+  # Wait for cluster operator to report Available
+  log_info "Waiting for registry operator to report Available (up to 3 minutes)..."
+  if ! oc wait --for=condition=Available clusteroperator/image-registry --timeout=180s; then
+    log_error "Registry operator failed to report Available within timeout"
+    return 1
+  fi
+
+  # Additional stabilization wait
+  log_info "Waiting for registry to fully stabilize..."
+  sleep 20
+
+  log_success "Registry is now available with persistent storage (PVC)"
   return 0
 }
 
