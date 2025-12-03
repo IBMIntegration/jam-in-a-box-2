@@ -73,6 +73,13 @@ metadata:
   labels:
     app: $POD_NAME
 spec:
+  initContainers:
+  - name: fix-permissions
+    image: busybox:latest
+    command: ['sh', '-c', 'chmod -R a+w /materials || true']
+    volumeMounts:
+    - name: materials-storage
+      mountPath: /materials
   containers:
   - name: nginx
     image: nginx:latest

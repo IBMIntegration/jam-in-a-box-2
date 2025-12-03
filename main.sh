@@ -4,33 +4,35 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JAM_NAMESPACE="jam-in-a-box"
 
-startHereParams=();
+echo "main.sh started with args: $*"
+
+navigatorAppParams=();
 quickMode=false;
 for arg in "$@"; do
   case $arg in
     --canary*)
-      startHereParams+=("${arg}")
+      navigatorAppParams+=("${arg}")
       shift
       ;;
     --clean*)
-      startHereParams+=("${arg}")
+      navigatorAppParams+=("${arg}")
       shift
       ;;
     --fork=*)
-      startHereParams+=("${arg}")
+      navigatorAppParams+=("${arg}")
       shift
       ;;
     --navigator-password=*)
-      startHereParams+=("--password=${arg#*=}")
+      navigatorAppParams+=("--password=${arg#*=}")
       shift
       ;;
     --start-here-app-password=*)
       echo "Warning: --start-here-app-password is deprecated, use --navigator-password instead" >&2
-      startHereParams+=("--password=${arg#*=}")
+      navigatorAppParams+=("--password=${arg#*=}")
       shift
       ;;
     --quick)
-      startHereParams+=("--quick")
+      navigatorAppParams+=("--quick")
       # shellcheck disable=SC2034
       quickMode=true
       shift
@@ -238,10 +240,11 @@ getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 # "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \
 #   --namespace="$NAMESPACE"
 
-log_info "Creating Start Here app resources..."
+log_info "Creating Navigator app resources..."
+log_debug "Navigator app parameters: ${navigatorParams[*]}"
 if ! "${SCRIPT_DIR}/scripts/helpers/build.sh" \
   --namespace="$JAM_NAMESPACE" \
-  "${startHereParams[@]}"
+  "${navigatorAppParams[@]}"
 then
   log_error "Start Here app setup failed"
   exit 1

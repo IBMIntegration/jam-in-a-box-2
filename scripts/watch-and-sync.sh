@@ -59,9 +59,15 @@ sync_files() {
   fi
 
   # Execute the tar sync command
-  if tar -C "$folder" -czf - . | \
+  # Use --no-xattrs to avoid macOS extended attribute warnings
+  # Use --no-same-owner on extraction to avoid permission issues in OpenShift
+  if tar -C "$folder" -czf - \
+    --exclude='.git' --exclude='.DS_Store' \
+    --exclude='*/._*' --exclude='._*' \
+    --no-xattrs . | \
     oc --namespace=${NAMESPACE} exec -i "$pod_name" -c nginx -- \
-    tar -C "${pod_folder}" -xzf -; then
+    sh -c "tar -C '${pod_folder}' -xzf - --no-same-owner --no-xattrs && \
+           chmod -R a+w '${pod_folder}'"; then
     LAST_SYNC=$(date +%s)
     log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
   else
