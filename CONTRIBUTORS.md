@@ -83,15 +83,15 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --start-here-app-password=jam --canary"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --fork=capnajax"
     ```
 
     The parameters are:
 
     - `--canary` or `--canary=*` -- use a git branch other than `main`. If branch is not specified, it'll use the `canary` branch.
-    - `--clean` -- removes all preëexisting materials before deploying.
+    - `--clean` -- removes all preëxisting materials before deploying.
     - `--fork=*` -- use a specific fork branch other than the main repository (IBMIntegration/jam-in-a-box-2). The forks URLs are named in the `repo-config.json` of the main repository
-    - `--start-here-app-password=*` -- set the jam-in-a-box password to something of your choosing. By default, it would otherwise set a random password.
+    - `--navigator-password=*` -- set the navigator password to something of your choosing. By default, it would otherwise set a random password.
 
 1. Then continue with the deployment
 

@@ -4,24 +4,36 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JAM_NAMESPACE="jam-in-a-box"
 
-startHereParams=();
+echo "main.sh started with args: $*"
+
+navigatorAppParams=();
 quickMode=false;
 for arg in "$@"; do
   case $arg in
     --canary*)
-      startHereParams+=("${arg}")
+      navigatorAppParams+=("${arg}")
       shift
       ;;
     --clean*)
-      startHereParams+=("${arg}")
+      navigatorAppParams+=("${arg}")
+      shift
+      ;;
+    --fork=*)
+      navigatorAppParams+=("${arg}")
+      shift
+      ;;
+    --navigator-password=*)
+      navigatorAppParams+=("--password=${arg#*=}")
       shift
       ;;
     --start-here-app-password=*)
-      startHereParams+=("--password=${arg#*=}")
+      echo "Warning: --start-here-app-password is deprecated, use --navigator-password instead" >&2
+      navigatorAppParams+=("--password=${arg#*=}")
       shift
       ;;
     --quick)
-      startHereParams+=("--quick")
+      navigatorAppParams+=("--quick")
+      # shellcheck disable=SC2034
       quickMode=true
       shift
       ;;
@@ -46,7 +58,7 @@ hasAllNecessaryTools=true
 
 function checkTool {
   for i in "$@"; do
-    if ! which "$i" &> /dev/null; then
+    if ! command -v "$i" &> /dev/null; then
         echo "$i is required but not installed. Please install $i and try again."
         hasAllNecessaryTools=false
     fi
@@ -79,8 +91,8 @@ fi
 log_info "Tool check completed successfully"
 
 log_info "Cleaning up previous output files if they exist..."
-oc -n "${JAM_NAMESPACE}" delete configmap jb-setup-output --ignore-not-found
-oc -n "${JAM_NAMESPACE}" delete secret jb-setup-secrets --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete configmap setup-output --ignore-not-found
+oc -n "${JAM_NAMESPACE}" delete secret setup-secrets --ignore-not-found
 
 ##
 # Reduce the size of the oc output by filtering out information that is
@@ -221,17 +233,18 @@ else
   fi
 fi
 
-"${SCRIPT_DIR}/scripts/datapower/jb-datapower.sh" --namespace="${JAM_NAMESPACE}"
+"${SCRIPT_DIR}/scripts/datapower/datapower.sh" --namespace="${JAM_NAMESPACE}"
 getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 
 # log_info "Creating Gatsby app resources..."
 # "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \
 #   --namespace="$NAMESPACE"
 
-log_info "Creating Start Here app resources..."
-if ! "${SCRIPT_DIR}/scripts/helpers/start-here-app.sh" \
+log_info "Creating Navigator app resources..."
+log_debug "Navigator app parameters: ${navigatorParams[*]}"
+if ! "${SCRIPT_DIR}/scripts/helpers/build.sh" \
   --namespace="$JAM_NAMESPACE" \
-  "${startHereParams[@]}"
+  "${navigatorAppParams[@]}"
 then
   log_error "Start Here app setup failed"
   exit 1
@@ -255,7 +268,7 @@ getInfo route tools apim-demo-mgmt-api-manager
 getInfo secret tools apim-demo-mgmt-admin-pass
 
 getInfo route "${JAM_NAMESPACE}" integration
-getInfo secret "${JAM_NAMESPACE}" jb-start-here-app-credentials
+getInfo secret "${JAM_NAMESPACE}" navigator-credentials
 
 log_info "Finalizing output files..."
 endFile "$output_file"
@@ -282,9 +295,9 @@ fi
 
 log_info "Creating ConfigMap and Secret for output files..."
 
-oc -n "${JAM_NAMESPACE}" create configmap jb-setup-output \
+oc -n "${JAM_NAMESPACE}" create configmap setup-output \
   --from-file=setup.json="$output_file"
-oc -n "${JAM_NAMESPACE}" create secret generic jb-setup-secrets \
+oc -n "${JAM_NAMESPACE}" create secret generic setup-secrets \
   --from-file=secret.json="$secret_file"
 
 log_info "Creating report..."
