@@ -1,13 +1,19 @@
 {
   "template_vars": {
     "REPO_GIT_URL": "https://github.com/IBMIntegration/jam-in-a-box-2.git",
-    "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2"
+    "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2",
+    "MATERIALS_HANDLER_GIT_URL": "https://github.com/IBMIntegration/jam-materials-handler.git",
+    "MATERIALS_GIT_URL": "https://github.com/IBMIntegration/jam-materials.git",
+    "NAVIGATOR_GIT_URL": "https://github.com/IBMIntegration/jam-navigator.git"
   },
   "forks": {
     "capnajax": {
       "template_vars": {
         "REPO_GIT_URL": "https://github.com/capnajax/integration-jam-in-a-box.git",
-        "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box"
+        "REPO_RAW_BASE_URL": "https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box",
+        "MATERIALS_HANDLER_GIT_URL": "https://github.com/capnajax/jam-materials-handler.git",
+        "MATERIALS_GIT_URL": "https://github.com/capnajax/jam-materials.git",
+        "NAVIGATOR_GIT_URL": "https://github.com/capnajax/jam-navigator.git"
       }
     }
   }

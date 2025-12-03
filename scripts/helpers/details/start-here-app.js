@@ -13,7 +13,7 @@ export default function startHereApp(config) {
     config,
     'Secret',
     'jam-in-a-box',
-    'jb-start-here-app-credentials'
+    'navigator-credentials'
   );
   return {
     startHereApp: {

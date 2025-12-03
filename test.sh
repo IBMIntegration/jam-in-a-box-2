@@ -215,7 +215,12 @@ for arg in "$@"; do
             remoteUser="${arg#*=}"
             shift
             ;;
+        --navigator-password=*)
+            mainParams+=("$arg")
+            shift
+            ;;
         --start-here-app-password=*)
+            echo "Warning: --start-here-app-password is deprecated, use --navigator-password instead" >&2
             mainParams+=("$arg")
             shift
             ;;

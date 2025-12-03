@@ -1,0 +1,44 @@
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: materials-handler
+  namespace: {{NAMESPACE}}
+  labels:
+    app: materials-handler
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: build-materials-handler
+  namespace: {{NAMESPACE}}
+  labels:
+    app: build-materials-handler
+spec:
+  source:
+    type: Git
+    git:
+      uri: {{MATERIALS_HANDLER_GIT_URL}}
+      ref: "{{GIT_BRANCH}}"  # Parameterized branch reference
+    contextDir: .
+    sources:
+    - type: Git
+      git:
+        uri: {{MATERIALS_GIT_URL}}
+        ref: "{{GIT_BRANCH}}"
+      contextDir: materials
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: nodejs:latest # OpenShift only uses UBI images
+        namespace: openshift
+  output:
+    to:
+      kind: ImageStreamTag
+      name: materials-handler:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  # Remove automatic Git webhook triggers since we want manual control

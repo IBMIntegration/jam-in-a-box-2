@@ -28,12 +28,12 @@ _log_with_pipe() {
     # Handle message and piped input combination
     if [[ -n "$message" ]]; then
         # Print the main message first
-        printf "[%s] [%s] %s\n" "$prefix" "$timestamp" "$message"
+        printf "[%s] [%s] %s\n" "$prefix" "$timestamp" "$message" 1>&2
         
         # If there's piped input, print it indented on following lines
         if [[ -n "$piped_input" ]]; then
             echo "$piped_input" | while IFS= read -r line; do
-                printf "%s%s\n" "$indent" "$line"
+                printf "%s%s\n" "$indent" "$line" 1>&2
             done
         fi
     else
@@ -42,15 +42,15 @@ _log_with_pipe() {
             local first_line=true
             echo "$piped_input" | while IFS= read -r line; do
                 if [[ "$first_line" == true ]]; then
-                    printf "[%s] [%s] %s\n" "$prefix" "$timestamp" "$line"
+                    printf "[%s] [%s] %s\n" "$prefix" "$timestamp" "$line" 1>&2
                     first_line=false
                 else
-                    printf "%s%s\n" "$indent" "$line"
+                    printf "%s%s\n" "$indent" "$line" 1>&2
                 fi
             done
         else
             # No message and no piped input, just print empty log
-            printf "[%s] [%s]\n" "$prefix" "$timestamp"
+            printf "[%s] [%s]\n" "$prefix" "$timestamp" 1>&2
         fi
     fi
 }

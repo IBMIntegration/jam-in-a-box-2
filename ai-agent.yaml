@@ -11,6 +11,8 @@ coding standards:
     - arrange functions and variables in alphabetical order when possible.
     - keep lines under 80 columns when possible.
     - use two-space tabs for indentation.
+    - all scripts need to be compatible with both bash 3.2 on Darwin and bash
+      4.x on Linux.
 
   bash:
     - global variables are in ALL_CAPS_WITH_UNDERSCORES when they are intended
@@ -62,6 +64,6 @@ rules of engagement:
 
 testing:
   # - test with this command line:
-  #    ./main.sh --clean --start-here-app-password=jam --canary
+  #    ./main.sh --clean --navigator-password=jam --canary
 
 z ai space: []

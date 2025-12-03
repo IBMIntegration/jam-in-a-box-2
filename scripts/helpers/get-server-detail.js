@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Script to read two JSON files and generate a report on their contents
+// This is used by an init container for the jam-in-a-boc pod
+
+
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
