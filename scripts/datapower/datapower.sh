@@ -1,15 +1,10 @@
 #!/bin/bash
 
 GW_NAME="apim-demo-gw"
-NAMESPACE="jam-in-a-box"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --namespace=*)
-      NAMESPACE="${1#*=}"
-      shift
-      ;;
     *)
       echo "Unknown parameter: $1"
       exit 1
@@ -17,10 +12,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if oc get configmap datapower-config -n "${NAMESPACE}" >/dev/null 2>&1; then
-  oc delete configmap datapower-config -n "${NAMESPACE}"
+if oc get configmap datapower-config -n tools >/dev/null 2>&1; then
+  oc delete configmap datapower-config -n tools
 fi
-oc create configmap datapower-config -n "${NAMESPACE}" \
+oc create configmap datapower-config -n tools \
   "--from-file=dpApp.cfg=$(dirname "$0")/datapower-dpApp.cfg"
 
 # Note: APIConnectCluster is always in tools namespace where CloudPak is installed
@@ -67,7 +62,7 @@ metadata:
   labels:
     jb-purpose: datapower-console
   name: ${GW_NAME}-console
-  namespace: ${NAMESPACE}
+  namespace: tools
 spec:
   port:
     targetPort: 9090
@@ -84,7 +79,7 @@ metadata:
   annotations:
     productMetric: VIRTUAL_PROCESSOR_CORE
   name: ${GW_NAME}-lab-ports
-  namespace: ${NAMESPACE}
+  namespace: tools
 spec:
   ipFamilies:
     - IPv4
@@ -104,7 +99,7 @@ metadata:
   labels:
     jb-purpose: lab
   name: lab-mpgw
-  namespace: ${NAMESPACE}
+  namespace: tools
 spec:
   port:
     targetPort: 10443
@@ -121,7 +116,7 @@ metadata:
   labels:
     jb-purpose: lab
   name: lab-mpgw
-  namespace: ${NAMESPACE}
+  namespace: tools
 spec:
   port:
     targetPort: 10443
