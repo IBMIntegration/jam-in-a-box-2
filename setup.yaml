@@ -214,56 +214,179 @@ data:
     source /scripts/logs.sh
     source /tmp/env_setup
     
-    info "Checking OpenShift image registry state..."
-    REGISTRY_STATE=""
-    for i in {1..30}; do
-      # Use retry logic for registry state check
-      REGISTRY_STATE=$(retry_command kubectl get \
-        config.imageregistry.operator.openshift.io/cluster \
-        -o jsonpath='{.spec.managementState}' || echo "Unknown")
-      if [ "$REGISTRY_STATE" = "Managed" ]; then
-        success "Registry is in Managed state"
-        break
+    info "Checking OpenShift image registry configuration..."
+    
+    # Check current registry state
+    REGISTRY_STATE=$(retry_command kubectl get \
+      config.imageregistry.operator.openshift.io/cluster \
+      -o jsonpath='{.spec.managementState}' 2>/dev/null || echo "Unknown")
+    STORAGE_CONFIG=$(retry_command kubectl get \
+      config.imageregistry.operator.openshift.io/cluster \
+      -o jsonpath='{.spec.storage}' 2>/dev/null || echo "{}")
+    
+    info "Current registry state: $REGISTRY_STATE"
+    info "Current storage config: $STORAGE_CONFIG"
+    
+    # If registry is Removed or has no storage, configure it
+    if [ "$REGISTRY_STATE" = "Removed" ] || [ "$STORAGE_CONFIG" = "{}" ]; then
+      info "Configuring registry with Managed state and PVC storage..."
+      
+      # Prefer CephFS for RWX support, fall back to default or RBD
+      STORAGE_CLASS=""
+      if retry_command kubectl get storageclass ocs-external-storagecluster-cephfs >/dev/null 2>&1; then
+        STORAGE_CLASS="ocs-external-storagecluster-cephfs"
+        info "Found CephFS StorageClass (supports ReadWriteMany)"
       else
-        info "Registry state: $REGISTRY_STATE (attempt $i/30)"
-        if [ "$REGISTRY_STATE" = "Removed" ]; then
-          info "Attempting to set registry to Managed state..."
+        # Get default StorageClass
+        STORAGE_CLASS=$(retry_command kubectl get storageclass \
+          -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}' \
+          2>/dev/null || echo "")
+        
+        if [ -z "$STORAGE_CLASS" ]; then
+          warning "No default StorageClass found, using first available..."
+          STORAGE_CLASS=$(retry_command kubectl get storageclass \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        fi
+      fi
+      
+      if [ -n "$STORAGE_CLASS" ]; then
+        info "Using StorageClass: $STORAGE_CLASS"
+        
+        if [ "$STORAGE_CLASS" = "ocs-external-storagecluster-cephfs" ]; then
+          # Pre-create PVC with CephFS to override default StorageClass
+          info "Pre-creating PVC with CephFS StorageClass..."
+          cat <<'EOFPVC' | retry_command kubectl apply -f -
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: image-registry-storage
+      namespace: openshift-image-registry
+      annotations:
+        imageregistry.openshift.io: "true"
+    spec:
+      accessModes:
+      - ReadWriteMany
+      resources:
+        requests:
+          storage: 100Gi
+      storageClassName: ocs-external-storagecluster-cephfs
+    EOFPVC
+          if [ $? -eq 0 ]; then
+            success "PVC pre-created with CephFS"
+            # Now configure registry to use the pre-created PVC
+            retry_command kubectl patch \
+              config.imageregistry.operator.openshift.io/cluster \
+              --type merge -p '{"spec":{"managementState":"Managed","storage":{"pvc":{"claim":"image-registry-storage"}}}}' \
+              || error "Failed to configure registry"
+            success "Registry configured with Managed state and CephFS storage (RWX)"
+          else
+            error "Failed to pre-create PVC"
+          fi
+        else
+          # Use default StorageClass with RWO mode
           retry_command kubectl patch \
             config.imageregistry.operator.openshift.io/cluster \
-            --type merge -p '{"spec":{"managementState":"Managed"}}' \
-            || info "Failed to patch registry state"
+            --type merge -p "{\"spec\":{\"managementState\":\"Managed\",\"replicas\":1,\"rolloutStrategy\":\"Recreate\",\"storage\":{\"pvc\":{\"claim\":\"\"}}}}" \
+            || error "Failed to configure registry"
+          success "Registry configured with Managed state and PVC storage (RWO)"
         fi
-        sleep 10
+      else
+        error "No StorageClass available for registry PVC"
       fi
-    done
-    
-    if [ "$REGISTRY_STATE" != "Managed" ]; then
-      warning "Registry state is still $REGISTRY_STATE after 5 minutes"
-      warning "This may cause build failures, but continuing setup..."
+    else
+      success "Registry already configured (state: $REGISTRY_STATE)"
     fi
     
-    # Wait a bit more for the registry to stabilize after state changes
-    info "Waiting for registry to stabilize..."
-    max_attempts=20
-    for i in {1..20}; do
-      READY_REPLICAS=$(retry_command kubectl get deployment \
-      image-registry -n openshift-image-registry \
-      -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-      DESIRED_REPLICAS=$(retry_command kubectl get deployment \
-      image-registry -n openshift-image-registry \
-      -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "1")
-      
-      if [ "$READY_REPLICAS" = "$DESIRED_REPLICAS" ] && [ "$READY_REPLICAS" != "0" ]; then
-      success "Registry is stable with $READY_REPLICAS/$DESIRED_REPLICAS replicas ready"
-      break
-      else
-      info "Registry replicas: $READY_REPLICAS/$DESIRED_REPLICAS ready (attempt $i/20)"
-      sleep 5
+    # Wait for PVC to be created and bound
+    info "Waiting for registry PVC to be created..."
+    for i in {1..36}; do
+      PVC_NAME=$(retry_command kubectl get pvc -n openshift-image-registry \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+      if [ -n "$PVC_NAME" ]; then
+        success "PVC created: $PVC_NAME"
+        break
       fi
+      info "Waiting for PVC creation (attempt $i/36)..."
+      sleep 5
     done
     
-    if [ "$READY_REPLICAS" != "$DESIRED_REPLICAS" ]; then
-      warning "Registry may not be fully stable, but continuing..."
+    if [ -z "$PVC_NAME" ]; then
+      warning "PVC not created after 3 minutes, checking registry config..."
+      retry_command kubectl get config.imageregistry.operator.openshift.io/cluster -o yaml
+    else
+      # Wait for PVC to be bound
+      info "Waiting for PVC to be bound..."
+      for i in {1..60}; do
+        PVC_STATUS=$(retry_command kubectl get pvc "$PVC_NAME" \
+          -n openshift-image-registry \
+          -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+        if [ "$PVC_STATUS" = "Bound" ]; then
+          success "PVC is bound"
+          break
+        fi
+        info "PVC status: $PVC_STATUS (attempt $i/60)..."
+        sleep 5
+      done
+      
+      if [ "$PVC_STATUS" != "Bound" ]; then
+        warning "PVC not bound after 5 minutes"
+        retry_command kubectl describe pvc "$PVC_NAME" -n openshift-image-registry
+      fi
+    fi
+    
+    # Wait for registry deployment to be created
+    info "Waiting for registry deployment..."
+    for i in {1..24}; do
+      DEPLOYMENT_EXISTS=$(retry_command kubectl get deployment \
+        image-registry -n openshift-image-registry \
+        -o jsonpath='{.metadata.name}' 2>/dev/null || echo "")
+      if [ -n "$DEPLOYMENT_EXISTS" ]; then
+        success "Registry deployment created"
+        break
+      fi
+      info "Waiting for deployment creation (attempt $i/24)..."
+      sleep 5
+    done
+    
+    if [ -z "$DEPLOYMENT_EXISTS" ]; then
+      warning "Registry deployment not created after 2 minutes"
+    else
+      # Wait for registry pods to be ready
+      info "Waiting for registry pods to be ready..."
+      for i in {1..60}; do
+        READY_REPLICAS=$(retry_command kubectl get deployment \
+          image-registry -n openshift-image-registry \
+          -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+        DESIRED_REPLICAS=$(retry_command kubectl get deployment \
+          image-registry -n openshift-image-registry \
+          -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "1")
+        
+        if [ "$READY_REPLICAS" = "$DESIRED_REPLICAS" ] && [ "$READY_REPLICAS" != "0" ]; then
+          success "Registry is ready with $READY_REPLICAS/$DESIRED_REPLICAS replicas"
+          break
+        else
+          info "Registry replicas: $READY_REPLICAS/$DESIRED_REPLICAS ready (attempt $i/60)..."
+          sleep 5
+        fi
+      done
+      
+      if [ "$READY_REPLICAS" != "$DESIRED_REPLICAS" ]; then
+        warning "Registry may not be fully ready, checking pod status..."
+        retry_command kubectl get pods -n openshift-image-registry
+        retry_command kubectl get events -n openshift-image-registry --sort-by=.metadata.creationTimestamp | tail -20
+      fi
+    fi
+    
+    # Final verification
+    info "Verifying registry operator status..."
+    OPERATOR_AVAILABLE=$(retry_command kubectl get \
+      config.imageregistry.operator.openshift.io/cluster \
+      -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' 2>/dev/null || echo "Unknown")
+    
+    if [ "$OPERATOR_AVAILABLE" = "True" ]; then
+      success "Registry operator reports Available=True"
+    else
+      warning "Registry operator status: Available=$OPERATOR_AVAILABLE"
     fi
 
   repo-clone.sh: |
@@ -366,6 +489,13 @@ data:
     info "Parameters to use: ${PARAMETERS:-'(none)'}"
     echo "export PARAMETERS='${PARAMETERS}'" >> /tmp/env_setup
 
+    # Set DEBUG flag based on parameters
+    if [[ "$PARAMETERS" == *"--debug"* ]]; then
+      DEBUG=true
+    else
+      DEBUG=${DEBUG:-false}
+    fi
+    echo "export DEBUG=$DEBUG" >> /tmp/env_setup
 
     echo "=== Integration Jam-in-a-Box Setup - Main Phase ==="
     
@@ -410,6 +540,30 @@ data:
       
       if [ $SETUP_EXIT_CODE -eq 0 ]; then
         echo "=== Setup completed successfully! ==="
+        
+        # Wait for navigator pod to be ready
+        info "Waiting for jam-in-a-box navigator pod to be ready..."
+        for i in {1..60}; do
+          NAV_READY=$(retry_command kubectl get pods -n jam-in-a-box \
+            -l app=navigator \
+            -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' \
+            2>/dev/null || echo "")
+          
+          if [ "$NAV_READY" = "True" ]; then
+            success "Navigator pod is ready!"
+            break
+          else
+            info "Waiting for navigator pod (attempt $i/60)..."
+            sleep 5
+          fi
+        done
+        
+        if [ "$NAV_READY" != "True" ]; then
+          warning "Navigator pod not ready after 5 minutes"
+          retry_command kubectl get pods -n jam-in-a-box -l app=navigator
+        else
+          echo "=== jam-in-a-box is fully deployed and ready! ==="
+        fi
       else
         echo "=== Setup failed with exit code: $SETUP_EXIT_CODE ==="
       fi
@@ -420,20 +574,54 @@ data:
     fi
     
     # Keep container running for debugging/testing
-    info "Setup phase complete. Container will remain running for inspection."
-    info "You can exec into this pod to test changes or debug issues:"
-    info "  oc exec -it jam-setup-pod -n jam-in-a-box -- /bin/bash"
+    if $DEBUG; then
+      info "Setup phase complete. Container will remain running for inspection."
+      info "You can exec into this pod to test changes or debug issues:"
+      info "  oc exec -it jam-setup-pod -n jam-in-a-box -- /bin/bash"
+    else
+      info "Setup phase complete. Container will exit shortly."
+    fi
     info ""
     info "To clean up when done:"
+    info "  oc delete deployment jam-in-a-box -n jam-in-a-box"
     info "  oc delete pod jam-setup-pod -n jam-in-a-box"
     info "  oc delete clusterrolebinding jam-setup-cluster-admin"
     info "  oc delete serviceaccount jam-setup-sa -n jam-in-a-box"
-    info "  oc delete namespace jam-in-a-box"
+    info "  oc delete secrets --field-selector type=Opaque -o name -n jam-in-a-box"
+    info "  oc delete -n jam-in-a-box cm jam-setup-scripts \\"
+    info "    navigator-md-handler-config navigator-nginx-config \\"
+    info "    navigator-scripts-init setup-output"
     
-    # Sleep to keep container alive
-    while true; do
-      sleep 3600
-    done
+    echo
+    echo "=== Access the navigator at: ==="
+    echo $'\x1b[4;1m'
+    navigator_hostname="$(
+      kubectl -n jam-in-a-box get cm setup-output \
+        -o jsonpath='{.data.setup\.json}' |
+      jq -r '.[]
+        |select(.kind=="Route" and .metadata.labels.app=="navigator")
+        |.spec.host')"
+    navigator_credentials=$(
+      kubectl -n jam-in-a-box get secrets setup-secrets \
+        -o jsonpath='{.data.secret\.json}' | base64 -d |
+      jq -r '.[]|select(.metadata.name=="navigator-credentials")|.data')
+    nuser=$(echo "$navigator_credentials" | jq -r '.username')
+    npass=$(echo "$navigator_credentials" | jq -r '.password')
+    echo "  https://$nuser:$npass@$navigator_hostname"
+    echo $'\x1b[0m'
+    echo "If credentials are required, use the following:"
+    echo "  Username: $nuser"
+    echo "  Password: $npass"
+    echo
+    if $DEBUG; then
+      info "DEBUG mode is enabled, keeping container running indefinitely."
+      while true; do
+        sleep 3600
+      done
+    else
+      info "DEBUG mode is disabled, exiting container."
+      exit $SETUP_EXIT_CODE
+    fi
 ---
 # Main setup pod
 apiVersion: v1

@@ -13,7 +13,7 @@ GIT_BRANCH="main"
 LAST_BUILD_NAME=""
 ROUTE_BASENAME="integration"
 
-DEBUG=true
+DEBUG="${DEBUG:-false}"
 
 ## 
 # This is a one-touch deployment script for a jam-in-a-box educational
@@ -41,6 +41,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --clean)
       doClean=true
+      shift
+      ;;
+    --debug)
+      DEBUG=true
+      export DEBUG
       shift
       ;;
     --fork=*)
