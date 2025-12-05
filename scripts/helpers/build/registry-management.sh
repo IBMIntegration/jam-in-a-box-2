@@ -161,7 +161,44 @@ function ensureInternalRegistry() {
     return 1
   fi
   
+  # Verify build controller can process builds
+  if ! verifyBuildControllerReady; then
+    return 1
+  fi
+  
   log_success "Internal registry is fully configured and ready for ImageStreams"
+  return 0
+}
+
+function verifyBuildControllerReady() {
+  log_subheader "Verifying build controller can process builds"
+  
+  # Check if build controller pods are ready
+  local controllerReady
+  controllerReady=$(oc get pods -n openshift-controller-manager \
+    -l app=openshift-controller-manager \
+    -o jsonpath='{.items[?(@.status.conditions[?(@.type=="Ready" && @.status=="True")])].metadata.name}' \
+    2>/dev/null | wc -w || echo "0")
+  
+  if [[ "$controllerReady" -eq 0 ]]; then
+    log_error "No ready controller manager pods found"
+    return 1
+  fi
+  
+  log_debug "Controller manager pods ready: $controllerReady"
+  
+  # Check build controller's view of registry
+  local buildControllerLog
+  buildControllerLog=$(oc logs -n openshift-controller-manager \
+    -l app=openshift-controller-manager \
+    --tail=50 2>/dev/null | grep -i "registry\|image" || echo "")
+  
+  if echo "$buildControllerLog" | grep -qi "error"; then
+    log_warning "Detected errors in controller manager logs related to registry:"
+    echo "$buildControllerLog" | grep -i error
+  fi
+  
+  log_debug "Build controller appears ready"
   return 0
 }
 
@@ -203,15 +240,35 @@ function forceRegistryRefresh() {
   log_debug "Cleaning up any stuck builds in 'New' state"
   oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
     awk '$3=="New" {print $1}' | \
-    xargs -r oc delete build -n "$NAMESPACE"
+    xargs -r oc delete build -n "$NAMESPACE" 2>/dev/null || true
   
   # Force restart of openshift-controller-manager pods to refresh registry state
   log_info "Restarting openshift-controller-manager to refresh registry configuration"
   if oc get pods -n openshift-controller-manager >/dev/null 2>&1; then
     oc delete pods -n openshift-controller-manager --all --wait=false >/dev/null 2>&1 || true
-    sleep 10
-    log_info "Waiting for controller manager to restart..."
-    oc wait --for=condition=Ready pods -l app=openshift-controller-manager -n openshift-controller-manager --timeout=120s >/dev/null 2>&1 || true
+    log_info "Waiting for controller manager to restart (up to 2 minutes)..."
+    
+    # Wait for pods to be recreated
+    sleep 5
+    for i in {1..24}; do
+      READY_COUNT=$(oc get pods -n openshift-controller-manager \
+        -l app=openshift-controller-manager \
+        -o jsonpath='{.items[?(@.status.conditions[?(@.type=="Ready" && @.status=="True")])].metadata.name}' \
+        2>/dev/null | wc -w || echo "0")
+      
+      if [[ "$READY_COUNT" -gt 0 ]]; then
+        log_success "Controller manager restarted ($READY_COUNT pod(s) ready)"
+        break
+      fi
+      log_debug "Waiting for controller manager pods to be ready... (attempt $i/24)"
+      sleep 5
+    done
+    
+    # Additional stabilization time for build controller to reconnect to registry
+    log_info "Allowing build controller to reconnect to registry..."
+    sleep 15
+  else
+    log_warning "Could not find openshift-controller-manager pods"
   fi
   
   log_success "Registry refresh completed"
