@@ -25,11 +25,13 @@ Where possible, describe what is happening, not just where to click and what to 
 
 1. All content must be written in Markdown. I have a few extensions:
     1. `${toc}` adds a Table of Contents
+    1. `${comment @author my comment text}` adds a comment that only appears on the screen when the site run in debug mode.
+    1. `${issue @author my issue here}` same as `${comment ... }` but in red.
 1. When linking to other markdowns, link them as `.html`. The server will handle the difference.
 
 ### Diagramming
 
-1. Use IBM colours in your diagrams.
+1. Use [IBM colours](https://www.ibm.com/design/language/color/) in your diagrams.
 1. Favour SVG for diagrams so they can be modified later if necessary.
 
 ### Screenshotting
@@ -50,7 +52,7 @@ Where possible, describe what is happening, not just where to click and what to 
 1. Use inclusive language.
     1. Remember that plain language is inclusive language. Unly use metahpores worth explaining.
 1. Speak to the reader in the second person, imperative tense when it makes sense, but be careful about tone.
-1. All code samples must use the American dialect of English.
+1. All code samples **must** use the American dialect of English. Dialect usage is not specified for prose as long as it can be understood globally.
 
 ## Cookbook
 
@@ -59,19 +61,13 @@ This section is for showing you handy tools for developing this app.
 ### Environment recommendations
 
 1. Do all testing in the `default` namespace or any namespace other than `jam-in-a-box` or `tools`. This ensures you never forget to specify a namespace.
-1. Paste this into your command line for convenience
+1. Paste this into your command line for convenience. Because we're specifically avoiding the two namespaces, use the aliases provided by these commands.
 
     ```sh
     alias oj='oc --namespace=jam-in-a-box'
     alias ot='oc --namespace=tools'
     if [ "$SHELL" == '/bin/bash' ]; then source <(oc completion bash); fi
     if [ "$SHELL" = '/bin/zsh' ]; then source <(oc completion zsh); fi
-    ```
-
-1. Use a post-commit hook to update archive files before checking content in. Set up the post-commit hook with
-
-    ```sh
-    scripts/setup-hooks.sh
     ```
 
 ### Custom parameter deployments
@@ -83,20 +79,23 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --fork=capnajax"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --debug --fork=capnajax"
     ```
 
     The parameters are:
 
     - `--canary` or `--canary=*` -- use a git branch other than `main`. If branch is not specified, it'll use the `canary` branch.
     - `--clean` -- removes all preëxisting materials before deploying.
+    - `--debug` -- adds additional logging and keeps the `jam-setup-pod` open so you can examine the file system after the run is complete.
     - `--fork=*` -- use a specific fork branch other than the main repository (IBMIntegration/jam-in-a-box-2). The forks URLs are named in the `repo-config.json` of the main repository
     - `--navigator-password=*` -- set the navigator password to something of your choosing. By default, it would otherwise set a random password.
 
-1. Then continue with the deployment
+1. Then continue with the deployment. Your local `setup.yaml` copy and your own fork of `setup.yaml` are just as valid as the one on GitHub, but be aware that they will pull build files from the same "official" repositories unless you specify the `--fork` above. Note that this can only use GitHub sources because the Tech Zone environment cannot pull code from your local desktop computer.
 
     ```sh
     oc apply -f https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/main/setup.yaml
+    oc apply -f https://raw.githubusercontent.com/my-github/my-fork/main/setup.yaml
+    oc apply -f ./setup.yaml
     ```
 
 ### Updating HTML
