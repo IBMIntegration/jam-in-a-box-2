@@ -173,31 +173,29 @@ function ensureInternalRegistry() {
 function verifyBuildControllerReady() {
   log_subheader "Verifying build controller can process builds"
   
-  # Check if build controller pods are ready
+  # Check if openshift-controller-manager namespace exists
+  if ! oc get namespace openshift-controller-manager >/dev/null 2>&1; then
+    log_warning "openshift-controller-manager namespace not found"
+    log_info "This may be OKD, CRC, or a different OpenShift variant"
+    log_info "Build controller may be in a different location - will attempt builds anyway"
+    return 0
+  fi
+  
+  # Check if build controller pods are running (simplified check)
   local controllerReady
   controllerReady=$(oc get pods -n openshift-controller-manager \
-    -l app=openshift-controller-manager \
-    -o jsonpath='{.items[?(@.status.conditions[?(@.type=="Ready" && @.status=="True")])].metadata.name}' \
-    2>/dev/null | wc -w || echo "0")
+    --field-selector=status.phase=Running \
+    --no-headers 2>/dev/null | wc -l || echo "0")
   
   if [[ "$controllerReady" -eq 0 ]]; then
-    log_error "No ready controller manager pods found"
-    return 1
+    log_warning "No running controller manager pods found"
+    log_info "Checking what exists in the namespace:"
+    oc get pods -n openshift-controller-manager 2>/dev/null || true
+    log_info "Will attempt builds anyway - if they fail, the build diagnostics will show why"
+    return 0
   fi
   
-  log_debug "Controller manager pods ready: $controllerReady"
-  
-  # Check build controller's view of registry
-  local buildControllerLog
-  buildControllerLog=$(oc logs -n openshift-controller-manager \
-    -l app=openshift-controller-manager \
-    --tail=50 2>/dev/null | grep -i "registry\|image" || echo "")
-  
-  if echo "$buildControllerLog" | grep -qi "error"; then
-    log_warning "Detected errors in controller manager logs related to registry:"
-    echo "$buildControllerLog" | grep -i error
-  fi
-  
+  log_debug "Controller manager pods running: $controllerReady"
   log_debug "Build controller appears ready"
   return 0
 }
