@@ -241,7 +241,7 @@ getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
 #   --namespace="$NAMESPACE"
 
 log_info "Creating Navigator app resources..."
-log_debug "Navigator app parameters: ${navigatorParams[*]}"
+log_debug "Navigator app parameters: ${navigatorAppParams[*]}"
 if ! "${SCRIPT_DIR}/scripts/helpers/build.sh" \
   --namespace="$JAM_NAMESPACE" \
   "${navigatorAppParams[@]}"
