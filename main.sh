@@ -235,6 +235,7 @@ fi
 
 "${SCRIPT_DIR}/scripts/datapower/datapower.sh" --namespace="${JAM_NAMESPACE}"
 getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
+getInfo route "${JAM_NAMESPACE}" lab-mpgw
 
 # log_info "Creating Gatsby app resources..."
 # "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \

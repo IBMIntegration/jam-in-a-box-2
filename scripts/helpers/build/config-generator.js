@@ -146,6 +146,11 @@ async function generateConfigObj() {
       text('Log in with Platform Navigator credentials', true)
     ]
   });
+
+  // Lab materials DataPower MPGW
+  host = getResource('Route', 'lab-mpgw');
+  out.hosts.push({baseUrl: `https://${host.spec.host}/`});
+
   return out;
 }
 
