@@ -133,11 +133,16 @@ compare_commits() {
   local fork_repo="$2"
   local branch="${3:-main}"
   
+  # Convert repo names to git SSH URLs
+  local upstream_url="git@github.com:$upstream_repo.git"
+  local fork_url="git@github.com:$fork_repo.git"
+  
+  # Get commit SHAs using git ls-remote
   local upstream_sha
   local fork_sha
   
-  upstream_sha=$(get_latest_commit "$upstream_repo" "$branch")
-  fork_sha=$(get_latest_commit "$fork_repo" "$branch")
+  upstream_sha=$(git ls-remote "$upstream_url" "refs/heads/$branch" 2>/dev/null | awk '{print $1}')
+  fork_sha=$(git ls-remote "$fork_url" "refs/heads/$branch" 2>/dev/null | awk '{print $1}')
   
   if [[ -z "$upstream_sha" ]] || [[ -z "$fork_sha" ]]; then
     echo "ERROR"
@@ -149,20 +154,64 @@ compare_commits() {
     return 0
   fi
   
-  # Check if fork is ahead or behind
+  # Try GitHub API first with timeout, fall back to git if it fails
   local comparison
-  comparison=$(gh api "repos/$upstream_repo/compare/$upstream_sha...$fork_sha" \
-    --jq '.status' 2>/dev/null || echo "ERROR")
+  local api_result
+  api_result=$(timeout 5 gh api "repos/$fork_repo/compare/$upstream_sha...$fork_sha" \
+    --jq '.status' 2>/dev/null || echo "")
+  
+  # Check if API call succeeded (result should be a single word, not JSON)
+  if [[ -n "$api_result" ]] && [[ ! "$api_result" =~ ^[{] ]]; then
+    comparison="$api_result"
+  else
+    comparison=""
+  fi
+  
+  if [[ -z "$comparison" ]]; then
+    # Fallback: use git to determine relationship
+    # Create a temporary directory for git operations
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    
+    comparison=$(
+      cd "$temp_dir" || exit 1
+      git init -q
+      git remote add upstream "$upstream_url"
+      git remote add fork "$fork_url"
+      git fetch -q upstream "$branch" 2>/dev/null || exit 1
+      git fetch -q fork "$branch" 2>/dev/null || exit 1
+      
+      # Check if fork contains upstream commits
+      if git merge-base --is-ancestor "$upstream_sha" "$fork_sha" 2>/dev/null; then
+        echo "AHEAD"
+      elif git merge-base --is-ancestor "$fork_sha" "$upstream_sha" 2>/dev/null; then
+        echo "BEHIND"
+      else
+        echo "DIVERGED"
+      fi
+    )
+    
+    rm -rf "$temp_dir"
+    
+    # If comparison is still empty, return ERROR
+    if [[ -z "$comparison" ]]; then
+      echo "ERROR"
+      return 1
+    fi
+  fi
   
   case "$comparison" in
-    ahead)
+    ahead|AHEAD)
       echo "AHEAD"
       ;;
-    behind)
+    behind|BEHIND)
       echo "BEHIND"
       ;;
-    diverged)
+    diverged|DIVERGED)
       echo "DIVERGED"
+      ;;
+    identical|IN_SYNC)
+      echo "IN_SYNC"
       ;;
     *)
       echo "ERROR"
@@ -314,21 +363,21 @@ main() {
       
       case "$status" in
         IN_SYNC)
-          printf "${COLOR_GREEN}✓${COLOR_RESET} %s: in sync\n" "$key"
+          printf "${COLOR_GREEN}✓${COLOR_RESET} %s: in sync\n" "$forkUrl"
           ;;
         AHEAD)
-          printf "${COLOR_BLUE}↑${COLOR_RESET} %s: fork is ahead\n" "$key"
+          printf "${COLOR_BLUE}↑${COLOR_RESET} %s: fork is AHEAD\n" "$forkUrl"
           ;;
         BEHIND)
-          printf "${COLOR_RED}↓${COLOR_RESET} %s: fork is BEHIND\n" "$key"
+          printf "${COLOR_RED}↓${COLOR_RESET} %s: fork is BEHIND\n" "$forkUrl"
           hasIssues=1
           ;;
         DIVERGED)
-          printf "${COLOR_RED}↕${COLOR_RESET} %s: fork has DIVERGED\n" "$key"
+          printf "${COLOR_RED}↕${COLOR_RESET} %s: fork has DIVERGED\n" "$forkUrl"
           hasIssues=1
           ;;
         ERROR)
-          printf "${COLOR_YELLOW}?${COLOR_RESET} %s: could not compare\n" "$key"
+          printf "${COLOR_YELLOW}?${COLOR_RESET} %s: could not compare\n" "$forkUrl"
           ;;
       esac
     done <<< "$repoKeys"

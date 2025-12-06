@@ -285,7 +285,7 @@ function showBuildDiagnostics() {
 
 function startNewBuild() {
   local buildConfigName="$1"
-  local buildOutput buildName
+  local buildOutput buildName buildPhase
   
   log_subheader "Starting new build for $buildConfigName"
   
@@ -309,6 +309,60 @@ function startNewBuild() {
   fi
   
   log_success "Started build: $buildName"
+  
+  # Wait for build to transition out of "New" state
+  log_info "Waiting for build to be accepted by build controller..."
+  local maxWait=60
+  local elapsed=0
+  local buildAccepted=false
+  
+  while [[ $elapsed -lt $maxWait ]]; do
+    buildPhase=$(oc get build "$buildName" -n "$NAMESPACE" \
+      -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+    
+    case "$buildPhase" in
+      Pending|Running)
+        log_success "Build accepted and $buildPhase"
+        buildAccepted=true
+        break
+        ;;
+      Failed|Error|Cancelled)
+        log_error "Build immediately failed with status: $buildPhase"
+        showBuildDiagnostics "$buildName" "$buildConfigName"
+        return 1
+        ;;
+      New)
+        log_debug "Build still in New state (elapsed: ${elapsed}s)"
+        sleep 2
+        ((elapsed += 2))
+        ;;
+      *)
+        log_debug "Build status: $buildPhase (elapsed: ${elapsed}s)"
+        sleep 2
+        ((elapsed += 2))
+        ;;
+    esac
+  done
+  
+  if [[ "$buildAccepted" == "false" ]]; then
+    log_error "Build stuck in 'New' state for ${elapsed}s - build controller may not be ready"
+    log_info "Checking build and registry diagnostics..."
+    
+    # Show build details
+    log_debug "Build object:"
+    oc get build "$buildName" -n "$NAMESPACE" -o yaml | head -50
+    
+    # Check if registry is actually ready
+    log_debug "Checking registry status..."
+    oc get clusteroperator image-registry -o jsonpath='{.status.conditions[?(@.type=="Available")]}'
+    
+    # Show recent events
+    log_debug "Recent namespace events:"
+    oc get events -n "$NAMESPACE" --sort-by=.metadata.creationTimestamp | tail -10
+    
+    return 1
+  fi
+  
   # Use a variable to avoid echo mixing with function output
   LAST_BUILD_NAME="$buildName"
   return 0

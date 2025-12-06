@@ -233,8 +233,9 @@ else
   fi
 fi
 
-"${SCRIPT_DIR}/scripts/datapower/datapower.sh" --namespace="${JAM_NAMESPACE}"
-getInfoByLabel route "${JAM_NAMESPACE}" jb-purpose=datapower-console
+"${SCRIPT_DIR}/scripts/datapower/datapower.sh"
+getInfoByLabel route tools jb-purpose=datapower-console
+getInfo route tools lab-mpgw
 
 # log_info "Creating Gatsby app resources..."
 # "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \

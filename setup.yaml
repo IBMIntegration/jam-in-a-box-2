@@ -502,6 +502,48 @@ data:
     # Check registry readiness
     /scripts/registry-check.sh
     
+    # Verify registry is actually ready for builds
+    info "Verifying registry is ready for builds..."
+    
+    # Check that registry pods are actually running and ready
+    info "Checking registry pods..."
+    # Use deployment readiness as the source of truth
+    REGISTRY_READY_COUNT=$(kubectl get deployment image-registry -n openshift-image-registry \
+      -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    
+    if [ "$REGISTRY_READY_COUNT" -eq 0 ]; then
+      error "No ready registry pods found"
+      kubectl get pods -n openshift-image-registry 2>/dev/null || true
+      kubectl get deployment image-registry -n openshift-image-registry 2>/dev/null || true
+      exit 1
+    fi
+    success "Registry has $REGISTRY_READY_COUNT ready pod(s)"
+    
+    # Check that openshift-controller-manager is ready (optional check)
+    info "Checking openshift-controller-manager..."
+    CONTROLLER_READY_COUNT=$(kubectl get pods -n openshift-controller-manager \
+      --field-selector=status.phase=Running \
+      --no-headers 2>/dev/null | wc -l || echo "0")
+    
+    if [ "$CONTROLLER_READY_COUNT" -eq 0 ]; then
+      warning "No running controller-manager pods found, checking if namespace exists..."
+      if kubectl get namespace openshift-controller-manager >/dev/null 2>&1; then
+        warning "Namespace exists but no running pods - this may cause build issues"
+        kubectl get pods -n openshift-controller-manager 2>/dev/null || true
+      else
+        info "openshift-controller-manager namespace doesn't exist (may be OKD/CRC)"
+        info "Builds may still work if using a different controller"
+      fi
+    else
+      success "Build controller has $CONTROLLER_READY_COUNT running pod(s)"
+    fi
+    
+    # Give the build controller a moment to fully connect to registry
+    info "Allowing build controller to stabilize connection to registry..."
+    sleep 10
+    
+    success "Registry is fully ready for builds"
+    
     # Clone repository
     cd /workspace
     /scripts/repo-clone.sh

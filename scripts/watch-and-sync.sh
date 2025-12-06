@@ -18,7 +18,7 @@ log_message() {
 }
 
 sync_files() {
-  local current_time folder="$1" pod_folder=''
+  local current_time folder="$1" container_dir='' container_name='nginx'
   current_time=$(date +%s)
 
   # Debounce: only sync if enough time has passed since last sync
@@ -33,9 +33,10 @@ sync_files() {
 
   # Get the pod name
   local pod_name
-  pod_name=archive-helper
-  if ! oc --namespace="${NAMESPACE}" get pod "archive-helper" >/dev/null 2>&1; then
-    log_message "ERROR: No pod archive-helper found in namespace ${NAMESPACE}"
+  pod_name=$(oc get po --namespace="${NAMESPACE}" --selector=app=navigator \
+    -o name | head -n 1 | cut -d'/' -f2)
+  if [ -z "$pod_name" ]; then
+    log_message "ERROR: No pod found with label app=navigator in namespace ${NAMESPACE}"
     return 1
   fi
 
@@ -43,12 +44,14 @@ sync_files() {
 
   if [[ "$folder" == "$HTDOCS_DIR" ]] || [[ "$folder" == "$HTDOCS_DIR"/* ]]
   then
-    pod_folder="/usr/share/nginx/html"
+    container_dir="/usr/share/nginx/html"
+    container_name='nginx'
     folder="$HTDOCS_DIR"
   elif [[ "$folder" == "$MATERIALS_DIR" ]] ||
        [[ "$folder" == "$MATERIALS_DIR"/* ]]
   then
-    pod_folder="/materials"
+    container_dir="/materials"
+    container_name='md-handler'
     folder="$MATERIALS_DIR"
   else
     log_message "ERROR: Unknown folder to sync: $folder"
@@ -65,9 +68,9 @@ sync_files() {
     --exclude='.git' --exclude='.DS_Store' \
     --exclude='*/._*' --exclude='._*' \
     --no-xattrs . | \
-    oc --namespace=${NAMESPACE} exec -i "$pod_name" -c nginx -- \
-    sh -c "tar -C '${pod_folder}' -xzf - --no-same-owner --no-xattrs && \
-           chmod -R a+w '${pod_folder}'"; then
+    oc --namespace=${NAMESPACE} exec -i "$pod_name" -c "$container_name" -- \
+    sh -c "tar -C '${container_dir}' -xzf - --no-same-owner && \
+           chmod -R a+w '${container_dir}'"; then
     LAST_SYNC=$(date +%s)
     log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
   else
