@@ -237,10 +237,6 @@ fi
 getInfoByLabel route tools jb-purpose=datapower-console
 getInfo route tools lab-mpgw
 
-# log_info "Creating Gatsby app resources..."
-# "${SCRIPT_DIR}/scripts/helpers/gatsby-site.sh" \
-#   --namespace="$NAMESPACE"
-
 log_info "Creating Navigator app resources..."
 log_debug "Navigator app parameters: ${navigatorAppParams[*]}"
 if ! "${SCRIPT_DIR}/scripts/helpers/build.sh" \
