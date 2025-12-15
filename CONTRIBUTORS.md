@@ -66,8 +66,7 @@ This section is for showing you handy tools for developing this app.
     ```sh
     alias oj='oc --namespace=jam-in-a-box'
     alias ot='oc --namespace=tools'
-    if [ "$SHELL" == '/bin/bash' ]; then source <(oc completion bash); fi
-    if [ "$SHELL" = '/bin/zsh' ]; then source <(oc completion zsh); fi
+    source <(oc completion $(sed -e 's/^.*\///' <<< "$SHELL"))
     ```
 
 ### Custom parameter deployments
@@ -92,10 +91,33 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 
 1. Then continue with the deployment. Your local `setup.yaml` copy and your own fork of `setup.yaml` are just as valid as the one on GitHub, but be aware that they will pull build files from the same "official" repositories unless you specify the `--fork` above. Note that this can only use GitHub sources because the Tech Zone environment cannot pull code from your local desktop computer.
 
+    Examples:
+
     ```sh
+    # The "official" setup.yaml
     oc apply -f https://raw.githubusercontent.com/IBMIntegration/jam-in-a-box-2/main/setup.yaml
-    oc apply -f https://raw.githubusercontent.com/my-github/my-fork/main/setup.yaml
+    ```
+
+    ```sh
+    # a forked version (change to your own fork here if you like)
+    oc apply -f https://raw.githubusercontent.com/capnajax/integration-jam-in-a-box/main/setup.yaml
+    ```
+
+    ```sh
+    # local desktop
     oc apply -f ./setup.yaml
+    ```
+
+    While this is deploying, you may watch the logs with
+
+    ```sh
+    oc logs -n jam-in-a-box jam-setup-pod --tail=-1 -f
+    ```
+
+    or you may simply watch the pods come up with
+
+    ```sh
+    oc -n jam-in-a-box get po -w
     ```
 
 ### Updating HTML
