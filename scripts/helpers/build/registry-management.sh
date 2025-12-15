@@ -242,6 +242,13 @@ function forceRegistryRefresh() {
   
   # Force restart of openshift-controller-manager pods to refresh registry state
   log_info "Restarting openshift-controller-manager to refresh registry configuration"
+  controllerManagerAppLabel="$(oc get deployment -n openshift-controller-manager \
+    controller-manager -o json | jq '.spec.selector.matchLabels.app')"
+  if [[ -z "$controllerManagerAppLabel" ]]; then
+    log_warning "Could not determine controller manager label selector"
+    controllerManagerAppLabel="openshift-controller-manager"
+  fi
+
   if oc get pods -n openshift-controller-manager >/dev/null 2>&1; then
     oc delete pods -n openshift-controller-manager --all --wait=false >/dev/null 2>&1 || true
     log_info "Waiting for controller manager to restart (up to 2 minutes)..."
@@ -250,9 +257,10 @@ function forceRegistryRefresh() {
     sleep 5
     for i in {1..24}; do
       READY_COUNT=$(oc get pods -n openshift-controller-manager \
-        -l app=openshift-controller-manager \
-        -o jsonpath='{.items[?(@.status.conditions[?(@.type=="Ready" && @.status=="True")])].metadata.name}' \
-        2>/dev/null | wc -w || echo "0")
+        -l app="$controllerManagerAppLabel" \
+        -o json 2>/dev/null | \
+        jq -r '.items[] | select(.status.conditions[]? | select(.type=="Ready" and .status=="True")) | .metadata.name' | \
+        wc -l || echo "0")
       
       if [[ "$READY_COUNT" -gt 0 ]]; then
         log_success "Controller manager restarted ($READY_COUNT pod(s) ready)"
