@@ -243,7 +243,7 @@ function forceRegistryRefresh() {
   # Force restart of openshift-controller-manager pods to refresh registry state
   log_info "Restarting openshift-controller-manager to refresh registry configuration"
   controllerManagerAppLabel="$(oc get deployment -n openshift-controller-manager \
-    controller-manager -o json | jq '.spec.selector.matchLabels.app')"
+    controller-manager -o json | jq -r '.spec.selector.matchLabels.app')"
   if [[ -z "$controllerManagerAppLabel" ]]; then
     log_warning "Could not determine controller manager label selector"
     controllerManagerAppLabel="openshift-controller-manager"
