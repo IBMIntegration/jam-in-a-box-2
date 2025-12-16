@@ -23,7 +23,7 @@ for arg in "$@"; do
       isCopyMaterials=true
       shift
       ;;
-    --copy-materials-handler)
+    --rebuild-materials-handler)
       isRebuildMaterialsHandler=true
       shift
       ;;
@@ -298,7 +298,7 @@ echo "    oc exec -it $POD_NAME -n $NAMESPACE -- /bin/bash"
 echo "==> To extract the archive in the pod:"
 echo "    oc exec $POD_NAME -n $NAMESPACE -- tar -xf /archive/$ARCHIVE_NAME -C /archive"
 
-h1 "Restarting jam-in-a-box deployment"
+h1 "Restarting the jam-in-a-box deployment"
 
 oc delete rs -l app=navigator -n "$NAMESPACE" --wait=false >/dev/null 2>&1 || true
 

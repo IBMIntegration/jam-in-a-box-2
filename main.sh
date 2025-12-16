@@ -99,7 +99,6 @@ oc -n "${JAM_NAMESPACE}" delete secret setup-secrets --ignore-not-found
 # not useful for the jam helper.
 function filterUselessInfo {
   local uselessInfo=(
-    .metadata.annotations
     .metadata.creationTimestamp
     .metadata.generation
     .metadata.resourceVersion
