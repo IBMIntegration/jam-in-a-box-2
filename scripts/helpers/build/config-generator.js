@@ -147,7 +147,7 @@ async function generateConfigObj() {
     ]
   });
 
-  // Lab materials
+  // Lab REST client routes
   let routes = configEntries.filter(entry => {
     return entry.kind === 'Route'
       && entry.metadata.annotations
@@ -173,9 +173,6 @@ async function generateConfigObj() {
       out.hosts.push(routeInfo);
     }
   }
-
-  host = getResource('Route', 'lab-mpgw');
-  out.hosts.push({baseUrl: `https://${host.spec.host}/`});
 
   return out;
 }

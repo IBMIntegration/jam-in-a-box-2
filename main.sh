@@ -144,6 +144,7 @@ function endFile {
 }
 
 function delistInfo {
+  # remove List wrapper if present
   if [ -z "$1" ]; then
     echo "Error: Could not delist info" >&2
     return 1
