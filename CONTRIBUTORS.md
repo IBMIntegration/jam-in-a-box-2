@@ -131,16 +131,20 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --debug --fork=capnajax"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--navigator-password=jam --debug --fork=capnajax"
     ```
 
     The parameters are:
 
     - `--canary` or `--canary=*` -- use a git branch other than `main`. If branch is not specified, it'll use the `canary` branch.
-    - `--clean` -- removes all preëxisting materials before deploying.
     - `--debug` -- adds additional logging and keeps the `jam-setup-pod` open so you can examine the file system after the run is complete.
     - `--fork=*` -- use a specific fork branch other than the main repository (IBMIntegration/jam-in-a-box-2). The forks URLs are named in the `repo-config.json` of the main repository
     - `--navigator-password=*` -- set the navigator password to something of your choosing. By default, it would otherwise set a random password.
+
+    To completely reset the environment before deployment, use:
+    ```sh
+    ./scripts/reset.sh
+    ```
 
 1. Then continue with the deployment. Your local `setup.yaml` copy and your own fork of `setup.yaml` are just as valid as the one on GitHub, but be aware that they will pull build files from the same "official" repositories unless you specify the `--fork` above. Note that this can only use GitHub sources because the Tech Zone environment cannot pull code from your local desktop computer.
 

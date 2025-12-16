@@ -14,10 +14,6 @@ for arg in "$@"; do
       navigatorAppParams+=("${arg}")
       shift
       ;;
-    --clean*)
-      navigatorAppParams+=("${arg}")
-      shift
-      ;;
     --fork=*)
       navigatorAppParams+=("${arg}")
       shift

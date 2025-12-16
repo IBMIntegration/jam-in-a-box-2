@@ -10,7 +10,7 @@
 #
 # Optional: Create a ConfigMap named 'jam-setup-params' in the default namespace 
 # to customize parameters. Example:
-#   oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --canary"
+#   oc create configmap -n default jam-setup-params --from-literal=parameters="--navigator-password=jam --canary"
 
 # Create jam-in-a-box namespace if it doesn't exist
 apiVersion: v1
@@ -387,6 +387,38 @@ data:
       success "Registry operator reports Available=True"
     else
       warning "Registry operator status: Available=$OPERATOR_AVAILABLE"
+    fi
+    
+    # Restart controller-manager to ensure it picks up the new registry
+    info "Restarting openshift-controller-manager to connect to registry..."
+    if kubectl get namespace openshift-controller-manager >/dev/null 2>&1; then
+      kubectl delete pods -n openshift-controller-manager --all --wait=false >/dev/null 2>&1 || true
+      
+      info "Waiting for controller-manager to restart..."
+      sleep 5
+      for i in {1..24}; do
+        CONTROLLER_READY=$(kubectl get pods -n openshift-controller-manager \
+          --field-selector=status.phase=Running \
+          --no-headers 2>/dev/null | wc -l || echo "0")
+        
+        if [ "$CONTROLLER_READY" -gt 0 ]; then
+          success "Controller-manager restarted ($CONTROLLER_READY pod(s) running)"
+          break
+        fi
+        info "Waiting for controller-manager (attempt $i/24)..."
+        sleep 5
+      done
+      
+      if [ "$CONTROLLER_READY" -eq 0 ]; then
+        warning "Controller-manager not running after 2 minutes"
+      else
+        # Give it time to connect to registry
+        info "Allowing controller-manager to connect to registry..."
+        sleep 10
+        success "Controller-manager ready and connected to registry"
+      fi
+    else
+      info "openshift-controller-manager namespace not found (may be OKD/CRC)"
     fi
 
   repo-clone.sh: |
