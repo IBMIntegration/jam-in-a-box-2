@@ -274,9 +274,10 @@ data:
           if [ $? -eq 0 ]; then
             success "PVC pre-created with CephFS"
             # Now configure registry to use the pre-created PVC
+            # Use JSON patch to ensure clean storage config without nested managementState
             retry_command kubectl patch \
               config.imageregistry.operator.openshift.io/cluster \
-              --type merge -p '{"spec":{"managementState":"Managed","storage":{"pvc":{"claim":"image-registry-storage"}}}}' \
+              --type=json -p='[{"op":"replace","path":"/spec/managementState","value":"Managed"},{"op":"replace","path":"/spec/storage","value":{"pvc":{"claim":"image-registry-storage"}}}]' \
               || error "Failed to configure registry"
             success "Registry configured with Managed state and CephFS storage (RWX)"
           else
@@ -284,9 +285,10 @@ data:
           fi
         else
           # Use default StorageClass with RWO mode
+          # Use JSON patch to ensure clean storage config
           retry_command kubectl patch \
             config.imageregistry.operator.openshift.io/cluster \
-            --type merge -p "{\"spec\":{\"managementState\":\"Managed\",\"replicas\":1,\"rolloutStrategy\":\"Recreate\",\"storage\":{\"pvc\":{\"claim\":\"\"}}}}" \
+            --type=json -p='[{"op":"replace","path":"/spec/managementState","value":"Managed"},{"op":"add","path":"/spec/replicas","value":1},{"op":"add","path":"/spec/rolloutStrategy","value":"Recreate"},{"op":"replace","path":"/spec/storage","value":{"pvc":{"claim":""}}}]' \
             || error "Failed to configure registry"
           success "Registry configured with Managed state and PVC storage (RWO)"
         fi
@@ -387,6 +389,36 @@ data:
       success "Registry operator reports Available=True"
     else
       warning "Registry operator status: Available=$OPERATOR_AVAILABLE"
+    fi
+    
+    # Check for nested managementState in storage config (causes builds to fail)
+    info "Checking storage configuration for build compatibility..."
+    STORAGE_MGMT_STATE=$(retry_command kubectl get \
+      config.imageregistry.operator.openshift.io/cluster \
+      -o jsonpath='{.spec.storage.managementState}' 2>/dev/null || echo "")
+    
+    if [ -n "$STORAGE_MGMT_STATE" ]; then
+      warning "Detected nested managementState in storage config, cleaning up..."
+      # Get PVC claim name
+      PVC_CLAIM=$(retry_command kubectl get \
+        config.imageregistry.operator.openshift.io/cluster \
+        -o jsonpath='{.spec.storage.pvc.claim}' 2>/dev/null || echo "")
+      
+      if [ -n "$PVC_CLAIM" ]; then
+        # Clean storage config using JSON patch
+        retry_command kubectl patch \
+          config.imageregistry.operator.openshift.io/cluster \
+          --type=json -p='[{"op":"replace","path":"/spec/storage","value":{"pvc":{"claim":"'$PVC_CLAIM'"}}}]' \
+          && success "Storage config cleaned" || warning "Failed to clean storage config"
+      else
+        # No claim specified, use empty claim for auto-provisioning
+        retry_command kubectl patch \
+          config.imageregistry.operator.openshift.io/cluster \
+          --type=json -p='[{"op":"replace","path":"/spec/storage","value":{"pvc":{"claim":""}}}]' \
+          && success "Storage config cleaned" || warning "Failed to clean storage config"
+      fi
+    else
+      success "Storage configuration is clean"
     fi
     
     # Restart controller-manager to ensure it picks up the new registry
