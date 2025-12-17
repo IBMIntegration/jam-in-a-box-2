@@ -12,6 +12,7 @@ POD_NAME="archive-helper"
 ARCHIVE_NAME="jam-in-a-box.tar"
 ARCHIVE_PATH="/tmp/${ARCHIVE_NAME}"
 UPLOAD_DIR="/usr/share/nginx/html"
+NAVIGATOR_DIR="$(cd "$REPO_DIR/../jam-navigator" && pwd)"
 MATERIALS_DIR="$(cd "$REPO_DIR/../jam-materials" && pwd)"
 MATERIALS_HANDLER_DIR="$(cd "$REPO_DIR/../jam-materials-handler" && pwd)"
 
@@ -142,7 +143,7 @@ spec:
     ports:
     - containerPort: 80
     volumeMounts:
-    - name: archive-storage
+    - name: htdocs-storage
       mountPath: /usr/share/nginx/html
     - name: materials-storage
       mountPath: /materials
@@ -151,9 +152,9 @@ spec:
     - name: local-bin-storage
       mountPath: /usr/local/bin
   volumes:
-  - name: archive-storage
-    emptyDir:
-      sizeLimit: 1Gi
+  - name: htdocs-storage
+    persistentVolumeClaim:
+      claimName: htdocs-pvc
   - name: materials-storage
     persistentVolumeClaim:
       claimName: materials-pvc
@@ -217,9 +218,57 @@ else
   echo "==> Skipping oc binary copy to pod, only necessary when using --copy-materials-handler."
 fi
 
+h1 "Adding htdocs-pvc volume to jam-in-a-box deployment"
+
+echo "==> Getting nginx container index..."
+
+NGINX_INDEX=$(oc get deployment jam-in-a-box -n "$NAMESPACE" -o json | \
+  jq '.spec.template.spec.containers | map(.name) | index("nginx")')
+if [ "$NGINX_INDEX" = "null" ] || [ -z "$NGINX_INDEX" ]; then
+  echo "==> Error: nginx container not found in deployment"
+  exit 1
+else
+  echo "==> Found nginx container at index: $NGINX_INDEX"
+  # Check if volumeMount already exists
+  EXISTING_MOUNT=$(oc get deployment jam-in-a-box -n "$NAMESPACE" -o json | \
+    jq ".spec.template.spec.containers[$NGINX_INDEX].volumeMounts | map(.name) | index(\"htdocs-storage\")")
+
+  if [ "$EXISTING_MOUNT" != "null" ] && [ -n "$EXISTING_MOUNT" ]; then
+    echo "==> htdocs-storage volumeMount already exists at index: $EXISTING_MOUNT"
+  else
+    echo "==> htdocs-storage volumeMount not found, will be added"
+    echo "==> Patching deployment to add htdocs-storage volume and mount..."
+
+    oc patch deployment jam-in-a-box -n "$NAMESPACE" --type=json -p='[
+      {
+        "op": "add",
+        "path": "/spec/template/spec/volumes/-",
+        "value": {
+          "name": "htdocs-storage",
+          "persistentVolumeClaim": {
+            "claimName": "htdocs-pvc"
+          }
+        }
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/'"$NGINX_INDEX"'/volumeMounts/0",
+        "value": {
+          "mountPath": "/usr/share/nginx/html",
+          "name": "htdocs-storage"
+        }
+      }
+    ]' && echo "==> Deployment patched successfully" || echo "==> Warning: Failed to patch deployment"
+  fi
+fi
+
 h1 "Deploying htdocs archive to pod"
 
 echo "==> Copying archive to pod..."
+tar --no-xattrs --exclude='.git' --exclude='.DS_Store' --exclude='*/._*' --exclude='._*' \
+  -C "$NAVIGATOR_DIR/htdocs" -cf - . | oc exec -i "$POD_NAME" \
+  -n "$NAMESPACE" -c nginx -- tar -C $UPLOAD_DIR -xf -
+
 oc cp "$ARCHIVE_PATH" "$NAMESPACE/$POD_NAME:$UPLOAD_DIR/$ARCHIVE_NAME" -c nginx
 
 echo "==> Verifying archive in pod..."
