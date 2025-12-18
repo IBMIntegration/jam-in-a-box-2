@@ -142,6 +142,7 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
     - `--navigator-password=*` -- set the navigator password to something of your choosing. By default, it would otherwise set a random password.
 
     To completely reset the environment before deployment, use:
+
     ```sh
     ./scripts/reset.sh
     ```
