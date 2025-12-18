@@ -530,43 +530,31 @@ data:
       exit 1
     fi
     
-    # Restart controller-manager to clear cached registry state
+    # Wait for registry to stabilize before proceeding
+    # Note: DO NOT restart controller-manager pods manually as this triggers
+    # an operator reconciliation that performs a rolling deployment with a
+    # new ReplicaSet. This can disrupt builds that are starting. The build
+    # controller will discover the registry automatically.
+    info "  Waiting for registry to stabilize..."
+    sleep 15
+    
+    # Verify controller-manager pods are stable (not in the middle of a rollout)
     if kubectl get namespace openshift-controller-manager \
         >/dev/null 2>&1; then
-      info "  Restarting controller-manager to clear registry cache..."
+      info "  Checking controller-manager stability..."
       
-      # Get pod selector from deployment
-      POD_SELECTOR=$(kubectl get deployment \
-        -n openshift-controller-manager -o json 2>/dev/null | \
-        jq -r '.items[0].spec.selector.matchLabels | to_entries | 
-               map("\(.key)=\(.value)") | join(",")')
+      # Check if there's an ongoing rollout
+      ROLLOUT_STATUS=$(kubectl rollout status deployment/controller-manager \
+        -n openshift-controller-manager --timeout=60s 2>&1 || echo "failed")
       
-      if [ -n "$POD_SELECTOR" ]; then
-        kubectl delete pods -n openshift-controller-manager \
-          -l "$POD_SELECTOR" --wait=false >/dev/null 2>&1 || true
-        
-        sleep 5
-        
-        # Wait for new pods to be running
-        for i in {1..24}; do
-          RUNNING=$(kubectl get pods -n openshift-controller-manager \
-            -l "$POD_SELECTOR" \
-            --field-selector=status.phase=Running \
-            --no-headers 2>/dev/null | wc -l | tr -d ' ')
-          
-          if [ "$RUNNING" -gt 0 ]; then
-            success "  Controller-manager restarted ($RUNNING pods running)"
-            break
-          fi
-          info "  Waiting for controller-manager pods (attempt $i/24)..."
-          sleep 5
-        done
-        
-        # Allow time for registry connection
-        info "  Allowing controller-manager to connect to registry..."
-        sleep 10
+      if echo "$ROLLOUT_STATUS" | grep -q "successfully rolled out"; then
+        success "  Controller-manager is stable and ready"
       else
-        warning "  Could not determine controller-manager pod selector"
+        warning "  Controller-manager may be rolling out: $ROLLOUT_STATUS"
+        warning "  Waiting for rollout to complete..."
+        # Wait up to 2 minutes for any rollout to finish
+        kubectl rollout status deployment/controller-manager \
+          -n openshift-controller-manager --timeout=120s 2>/dev/null || true
       fi
     else
       info "  Controller-manager namespace not found (may be OKD/CRC)"
