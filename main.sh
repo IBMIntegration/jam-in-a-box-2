@@ -14,10 +14,6 @@ for arg in "$@"; do
       navigatorAppParams+=("${arg}")
       shift
       ;;
-    --clean*)
-      navigatorAppParams+=("${arg}")
-      shift
-      ;;
     --fork=*)
       navigatorAppParams+=("${arg}")
       shift
@@ -99,7 +95,6 @@ oc -n "${JAM_NAMESPACE}" delete secret setup-secrets --ignore-not-found
 # not useful for the jam helper.
 function filterUselessInfo {
   local uselessInfo=(
-    .metadata.annotations
     .metadata.creationTimestamp
     .metadata.generation
     .metadata.resourceVersion
@@ -145,6 +140,7 @@ function endFile {
 }
 
 function delistInfo {
+  # remove List wrapper if present
   if [ -z "$1" ]; then
     echo "Error: Could not delist info" >&2
     return 1

@@ -19,6 +19,7 @@ log_message() {
 
 sync_files() {
   local current_time folder="$1" container_dir='' container_name='nginx'
+  local detected_file="$2"
   current_time=$(date +%s)
 
   # Debounce: only sync if enough time has passed since last sync
@@ -26,33 +27,31 @@ sync_files() {
     return 0
   fi
 
-  log_message "File changes detected, syncing to nginx container..."
+  if [[ "$detected_file" == "true" ]]; then
+    log_message "File changes detected, syncing to archive-helper pod..."
+  else
+    log_message "Syncing to archive-helper pod..."
+  fi
 
   # Wait for debounce period
   sleep $DEBOUNCE_DELAY
 
   # Get the pod name
   local pod_name
-  pod_name=$(oc get po --namespace="${NAMESPACE}" --selector=app=navigator \
-    -o name | head -n 1 | cut -d'/' -f2)
-  if [ -z "$pod_name" ]; then
-    log_message "ERROR: No pod found with label app=navigator in namespace ${NAMESPACE}"
-    return 1
-  fi
-
-  log_message "Syncing to pod: $pod_name"
 
   if [[ "$folder" == "$HTDOCS_DIR" ]] || [[ "$folder" == "$HTDOCS_DIR"/* ]]
   then
     container_dir="/usr/share/nginx/html"
     container_name='nginx'
     folder="$HTDOCS_DIR"
+    pod_name="archive-helper"
   elif [[ "$folder" == "$MATERIALS_DIR" ]] ||
        [[ "$folder" == "$MATERIALS_DIR"/* ]]
   then
     container_dir="/materials"
-    container_name='md-handler'
+    container_name='nginx'
     folder="$MATERIALS_DIR"
+    pod_name="archive-helper"
   else
     log_message "ERROR: Unknown folder to sync: $folder"
     log_message "Expected to be under:"
@@ -61,6 +60,9 @@ sync_files() {
     return 1
   fi
 
+  log_message "Syncing to pod: $pod_name"
+  log_message "Container: $container_name"
+
   # Execute the tar sync command
   # Use --no-xattrs to avoid macOS extended attribute warnings
   # Use --no-same-owner on extraction to avoid permission issues in OpenShift
@@ -68,7 +70,7 @@ sync_files() {
     --exclude='.git' --exclude='.DS_Store' \
     --exclude='*/._*' --exclude='._*' \
     --no-xattrs . | \
-    oc --namespace=${NAMESPACE} exec -i "$pod_name" -c "$container_name" -- \
+    oc --namespace=${NAMESPACE} exec -i "${pod_name}" -c "$container_name" -- \
     sh -c "tar -C '${container_dir}' -xzf - --no-same-owner && \
            chmod -R a+w '${container_dir}'"; then
     LAST_SYNC=$(date +%s)
@@ -85,63 +87,39 @@ if [[ ! -d "$HTDOCS_DIR" ]]; then
   exit 1
 fi
 
-# Check which file watcher is available
-if command -v fswatch >/dev/null 2>&1; then
-  # macOS - use fswatch
-  log_message "Starting file watcher using fswatch..."
-  log_message "Monitoring: $HTDOCS_DIR"
+# Poll files for changes
+log_message "Monitoring: $HTDOCS_DIR"
 
-  fswatch -o -r --event Created --event Updated \
-    --event Removed --event Renamed "$HTDOCS_DIR" | \
-    while read -r _; do
-      sync_files
-    done
+sync_files "$HTDOCS_DIR" false
+sync_files "$MATERIALS_DIR" false
 
-elif command -v inotifywait >/dev/null 2>&1; then
-  # Linux - use inotifywait
-  log_message "Starting file watcher using inotifywait..."
-  log_message "Monitoring: $HTDOCS_DIR"
+last_check=0
+while true; do
+  current_mtime=$(find "$HTDOCS_DIR" -type f \
+    -exec stat -f "%m" {} \; 2>/dev/null | sort -n | tail -1)
 
-  inotifywait -m -r -e modify,create,delete,move \
-    --format '%w%f %e %T' --timefmt '%Y-%m-%d %H:%M:%S' \
-    "$HTDOCS_DIR" "$MATERIALS_DIR" | \
-    while read -r file event time; do
-      sync_files "$file"
-    done
+  if [[ -z "$current_mtime" ]]; then
+    current_mtime=0
+  fi
 
-else
-  # Fallback - polling method
-  log_message "WARNING: Neither fswatch nor inotifywait found, using polling method"
-  log_message "Monitoring: $HTDOCS_DIR"
+  if (( current_mtime > last_check )); then
+    log_message "HTDOCS File changes detected (mtime: $current_mtime)"
+    sync_files "$HTDOCS_DIR" true
+    last_check=$current_mtime
+  fi
 
-  last_check=0
-  while true; do
-    current_mtime=$(find "$HTDOCS_DIR" -type f \
-      -exec stat -f "%m" {} \; 2>/dev/null | sort -n | tail -1)
+  current_mtime=$(find "$MATERIALS_DIR" -type f \
+    -exec stat -f "%m" {} \; 2>/dev/null | sort -n | tail -1)
 
-    if [[ -z "$current_mtime" ]]; then
-      current_mtime=0
-    fi
+  if [[ -z "$current_mtime" ]]; then
+    current_mtime=0
+  fi
 
-    if (( current_mtime > last_check )); then
-      log_message "HTDOCS File changes detected (mtime: $current_mtime)"
-      sync_files "$HTDOCS_DIR"
-      last_check=$current_mtime
-    fi
+  if (( current_mtime > last_check )); then
+    log_message "MATERIALS File changes detected (mtime: $current_mtime)"
+    sync_files "$MATERIALS_DIR" true
+    last_check=$current_mtime
+  fi
 
-    current_mtime=$(find "$MATERIALS_DIR" -type f \
-      -exec stat -f "%m" {} \; 2>/dev/null | sort -n | tail -1)
-
-    if [[ -z "$current_mtime" ]]; then
-      current_mtime=0
-    fi
-
-    if (( current_mtime > last_check )); then
-      log_message "MATERIALS File changes detected (mtime: $current_mtime)"
-      sync_files "$MATERIALS_DIR"
-      last_check=$current_mtime
-    fi
-
-    sleep 2
-  done
-fi
+  sleep 2
+done

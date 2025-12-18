@@ -96,23 +96,12 @@ spec:
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  labels:
-    jb-purpose: lab
-  name: lab-mpgw
-  namespace: tools
-spec:
-  port:
-    targetPort: 10443
-  tls:
-    termination: passthrough
-  to:
-    kind: Service
-    name: ${GW_NAME}-lab-endpoints
-    weight: 100
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
+  annotations:
+    com.ibm.jam-in-a-box: lab
+    com.ibm.jam-in-a-box.endpoint.name: "DataPower MPGW Lab Endpoint"
+    com.ibm.jam-in-a-box.endpoint.description: |
+      This endpoint gives access to the DataPower server on port 10443 for
+      lab exercises.
   labels:
     jb-purpose: lab
   name: lab-mpgw

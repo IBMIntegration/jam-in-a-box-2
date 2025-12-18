@@ -232,52 +232,26 @@ function ensureRegistryRoute() {
 }
 
 function forceRegistryRefresh() {
-  log_subheader "Forcing build controller to refresh registry configuration"
+  # Note: controller-manager restart is now handled in setup.yaml after registry configuration
+  # This function only cleans up stuck builds to avoid conflicts
   
-  # Delete any stuck builds first
+  log_subheader "Checking for stuck builds"
+  
+  # Delete any stuck builds to avoid conflicts with new builds
   log_debug "Cleaning up any stuck builds in 'New' state"
-  oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
-    awk '$3=="New" {print $1}' | \
-    xargs -r oc delete build -n "$NAMESPACE" 2>/dev/null || true
+  STUCK_BUILDS=$(oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
+    awk '$3=="New" {print $1}' || true)
   
-  # Force restart of openshift-controller-manager pods to refresh registry state
-  log_info "Restarting openshift-controller-manager to refresh registry configuration"
-  controllerManagerAppLabel="$(oc get deployment -n openshift-controller-manager \
-    controller-manager -o json | jq '.spec.selector.matchLabels.app')"
-  if [[ -z "$controllerManagerAppLabel" ]]; then
-    log_warning "Could not determine controller manager label selector"
-    controllerManagerAppLabel="openshift-controller-manager"
-  fi
-
-  if oc get pods -n openshift-controller-manager >/dev/null 2>&1; then
-    oc delete pods -n openshift-controller-manager --all --wait=false >/dev/null 2>&1 || true
-    log_info "Waiting for controller manager to restart (up to 2 minutes)..."
-    
-    # Wait for pods to be recreated
-    sleep 5
-    for i in {1..24}; do
-      READY_COUNT=$(oc get pods -n openshift-controller-manager \
-        -l app="$controllerManagerAppLabel" \
-        -o json 2>/dev/null | \
-        jq -r '.items[] | select(.status.conditions[]? | select(.type=="Ready" and .status=="True")) | .metadata.name' | \
-        wc -l || echo "0")
-      
-      if [[ "$READY_COUNT" -gt 0 ]]; then
-        log_success "Controller manager restarted ($READY_COUNT pod(s) ready)"
-        break
-      fi
-      log_debug "Waiting for controller manager pods to be ready... (attempt $i/24)"
-      sleep 5
-    done
-    
-    # Additional stabilization time for build controller to reconnect to registry
-    log_info "Allowing build controller to reconnect to registry..."
-    sleep 15
-  else
-    log_warning "Could not find openshift-controller-manager pods"
+  if [[ -n "$STUCK_BUILDS" ]]; then
+    log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
+    sleep 30
+    # Delete them after giving them a chance to transition
+    oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
+      awk '$3=="New" {print $1}' | \
+      xargs -r oc delete build -n "$NAMESPACE" 2>/dev/null || true
   fi
   
-  log_success "Registry refresh completed"
+  log_success "Build environment ready"
   return 0
 }
 

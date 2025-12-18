@@ -35,7 +35,9 @@ function applyBuildConfiguration() {
   local materialsGitUrl materialsHandlerGitUrl navigatorGitUrl repoGitUrl
 
   # check if there's already a buildconfig applied for this app
-  if oc get buildconfig "build-$appName" -n "$NAMESPACE" >/dev/null 2>&1; then
+  # BUT also check if the ImageStream exists - if not, we need to reapply everything
+  if oc get buildconfig "build-$appName" -n "$NAMESPACE" >/dev/null 2>&1 && \
+     oc get imagestream "$appName" -n "$NAMESPACE" >/dev/null 2>&1; then
     log_info "BuildConfig build-$appName already exists in namespace $NAMESPACE"
     return 0
   fi

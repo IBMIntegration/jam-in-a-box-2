@@ -2,6 +2,19 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: htdocs-pvc
+  namespace: {{NAMESPACE}}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Mi
+  storageClassName: ocs-external-storagecluster-cephfs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: materials-pvc
   namespace: {{NAMESPACE}}
 spec:

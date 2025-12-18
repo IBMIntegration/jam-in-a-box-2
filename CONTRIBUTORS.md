@@ -69,7 +69,60 @@ This section is for showing you handy tools for developing this app.
     source <(oc completion $(sed -e 's/^.*\///' <<< "$SHELL"))
     ```
 
-### Custom parameter deployments
+### Code Testing
+
+All code can be tested [online](#online-testing) and static resources (like lab materials) can be tested [locally](#local-testing) too.
+
+#### Online testing
+
+For testing lab materials, markdown-handler, and navigator HTML changes, you'll need to run a configuration script first. This sets up an archive-helper pod and populates it with code from your local desktop.
+
+First, ensure all your code is downloaded your local machine. There are four
+repositories, and they must all be downloaded to sister directories. For all of these repositories, you may use a fork, but all but the first one must have the
+same folder name. Scripts in the `jam-in-a-box-2` repo will look for files in the others by walking your directory tree to, for example, `../jam-materials`.
+
+```sh
+git clone git@github.com:IBMIntegration/jam-in-a-box-2.git
+git clone git@github.com:IBMIntegration/jam-navigator.git
+git clone git@github.com:IBMIntegration/jam-materials-handler.git
+git clone git@github.com:IBMIntegration/jam-materials.git
+```
+
+Ensure they are all up to date with:
+
+```sh
+# from the jam-in-a-box-2 folder
+git pull
+for i in jam-navigator jam-materials-handler jam-materials; do
+    (cd ../$i; git pull)
+done
+```
+
+Then convert your deployed Jam-in-a-box environment to a development environment, which creates the archive-helper pod and populates it with local files. You may rerun this script to update all the files.
+
+```sh
+scripts/testrun.sh [--copy-materials] [--rebuild-materials-handler]
+# --copy-materials             copies the lab materials. This may be a large
+#                              copy. If you omit this, then the official files
+#                              will remain in place.
+# --rebuild-materials-handler  rebuilds the materials handler app. This may
+#                              take a while and is only necessary for testing
+#                              updates to the app itself. Content updates do not
+#                              require this
+```
+
+#### Local testing
+
+For lab materials, there is an even quicker way to view the content you are working on with the local testing server.
+
+```sh
+cd ../jam-materials-handler
+./run-local.sh
+```
+
+Then point your browser to [http://localhost:8081/tracks]
+
+### Deployment testing
 
 Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-options`.
 
@@ -78,16 +131,21 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--clean --navigator-password=jam --debug --fork=capnajax"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--navigator-password=jam --debug --fork=capnajax"
     ```
 
     The parameters are:
 
     - `--canary` or `--canary=*` -- use a git branch other than `main`. If branch is not specified, it'll use the `canary` branch.
-    - `--clean` -- removes all preëxisting materials before deploying.
     - `--debug` -- adds additional logging and keeps the `jam-setup-pod` open so you can examine the file system after the run is complete.
     - `--fork=*` -- use a specific fork branch other than the main repository (IBMIntegration/jam-in-a-box-2). The forks URLs are named in the `repo-config.json` of the main repository
     - `--navigator-password=*` -- set the navigator password to something of your choosing. By default, it would otherwise set a random password.
+
+    To completely reset the environment before deployment, use:
+
+    ```sh
+    ./scripts/reset.sh
+    ```
 
 1. Then continue with the deployment. Your local `setup.yaml` copy and your own fork of `setup.yaml` are just as valid as the one on GitHub, but be aware that they will pull build files from the same "official" repositories unless you specify the `--fork` above. Note that this can only use GitHub sources because the Tech Zone environment cannot pull code from your local desktop computer.
 
@@ -120,10 +178,3 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
     oc -n jam-in-a-box get po -w
     ```
 
-### Updating HTML
-
-To quickly update most HTML for the `jam-in-a-box` app for testing, there's a script to watch the `htdocs` folder and automatically upload changes to the pod.
-
-```sh
-scripts/watch-and-sync.sh
-```

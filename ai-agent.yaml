@@ -64,6 +64,6 @@ rules of engagement:
 
 testing:
   # - test with this command line:
-  #    ./main.sh --clean --navigator-password=jam --canary
+  #    ./main.sh --navigator-password=jam --canary
 
 z ai space: []

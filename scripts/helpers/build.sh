@@ -24,7 +24,6 @@ DEBUG="${DEBUG:-false}"
 
 source "$SCRIPT_DIR/build/logging.sh"
 
-doClean=false
 navigatorPassword=''
 quickMode=false
 export quickMode
@@ -37,10 +36,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --canary=*)
       GIT_BRANCH="${1#*=}"
-      shift
-      ;;
-    --clean)
-      doClean=true
       shift
       ;;
     --debug)
@@ -98,7 +93,6 @@ fi
 
 source "$SCRIPT_DIR/build/registry-management.sh"
 source "$SCRIPT_DIR/build/build-management.sh"
-source "$SCRIPT_DIR/build/cleanup.sh"
 source "$SCRIPT_DIR/build/utility.sh"
 source "$SCRIPT_DIR/build/app-deployment.sh"
 
@@ -148,7 +142,6 @@ function setupNavigatorApp() {
 # Main Execution
 # =============================================================================
 
-cleanup
 setupNavigatorApp
 
 # =============================================================================

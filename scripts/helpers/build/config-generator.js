@@ -147,9 +147,32 @@ async function generateConfigObj() {
     ]
   });
 
-  // Lab materials DataPower MPGW
-  host = getResource('Route', 'lab-mpgw');
-  out.hosts.push({baseUrl: `https://${host.spec.host}/`});
+  // Lab REST client routes
+  let routes = configEntries.filter(entry => {
+    return entry.kind === 'Route'
+      && entry.metadata.annotations
+      && entry.metadata.annotations['com.ibm.jam-in-a-box'] === 'lab';
+  });
+  if (routes.length > 0) {
+    out.hosts = [];
+    for (let route of routes) {
+      let routeInfo = {
+        baseUrl: `https://${route.spec.host}/`
+      };
+      // the ones used are:
+      // name - the name to display in the menu
+      // description - a description of the endpoint
+      // more may be added later
+      for (let annotation in route.metadata.annotations) {
+        if (annotation.startsWith('com.ibm.jam-in-a-box.endpoint.')) {
+          let key = annotation.replace('com.ibm.jam-in-a-box.endpoint.', '');
+          routeInfo[key] = route.metadata.annotations[annotation];
+        }
+      }
+
+      out.hosts.push(routeInfo);
+    }
+  }
 
   return out;
 }
