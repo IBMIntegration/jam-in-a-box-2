@@ -305,7 +305,8 @@ function forceRegistryRefresh() {
   
   if [[ -n "$STUCK_BUILDS" ]]; then
     log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
-    if ! waitForRegistryReady "$NAMESPACE" 30; then
+    log_info "This may take several minutes on fresh clusters..."
+    if ! waitForRegistryReady "$NAMESPACE" 300; then
       log_warning "Registry may not be fully ready, proceeding anyway"
     fi
     # Delete them after giving them a chance to transition
@@ -365,7 +366,8 @@ function validateImageStreamConfiguration() {
   # Wait a bit more and check if any builds are stuck in New state
   if oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | grep -q "New"; then
     log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
-    if ! waitForRegistryReady "$NAMESPACE" 30; then
+    log_info "This may take several minutes on fresh clusters..."
+    if ! waitForRegistryReady "$NAMESPACE" 300; then
       log_warning "Registry may not be fully ready, proceeding anyway"
     fi
   fi

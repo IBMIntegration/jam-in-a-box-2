@@ -478,8 +478,28 @@ data:
     if [ "$STORAGE_NEEDS_FIX" = "true" ]; then
       info "Phase 3-4: Fixing storage configuration..."
       
-      # Step 1: Clear storage config to remove nested managementState
-      info "  Step 1: Clearing storage configuration..."
+      # Step 1: Set registry to Removed to release the PVC
+      info "  Step 1: Setting registry to Removed state to release storage..."
+      retry_command kubectl patch \
+        config.imageregistry.operator.openshift.io/cluster \
+        --type merge -p '{"spec":{"managementState":"Removed"}}'
+      
+      # Wait for registry deployment to be deleted
+      info "  Waiting for registry deployment to be removed..."
+      for i in {1..24}; do
+        if ! kubectl get deployment image-registry \
+            -n openshift-image-registry >/dev/null 2>&1; then
+          success "  Registry deployment removed"
+          break
+        fi
+        if [ $i -eq 24 ]; then
+          warning "  Registry deployment still exists, continuing anyway"
+        fi
+        sleep 5
+      done
+      
+      # Step 2: Clear storage config to remove nested managementState
+      info "  Step 2: Clearing storage configuration..."
       # Use JSON patch to completely remove the storage field
       retry_command kubectl patch \
         config.imageregistry.operator.openshift.io/cluster \
@@ -505,10 +525,10 @@ data:
         sleep 2
       done
       
-      # Step 2: Delete existing PVC
+      # Step 3: Delete existing PVC (now that deployment is gone)
       if kubectl get pvc image-registry-storage \
           -n openshift-image-registry >/dev/null 2>&1; then
-        info "  Step 2: Deleting existing PVC..."
+        info "  Step 3: Deleting existing PVC..."
         kubectl delete pvc image-registry-storage \
           -n openshift-image-registry
         
@@ -521,10 +541,19 @@ data:
           info "  Waiting for PVC deletion (attempt $i/30)..."
           sleep 2
         done
+        
+        if kubectl get pvc image-registry-storage \
+            -n openshift-image-registry >/dev/null 2>&1; then
+          warning "  PVC still exists after 60s, forcing deletion..."
+          kubectl patch pvc image-registry-storage \
+            -n openshift-image-registry \
+            --type json -p '[{"op":"remove","path":"/metadata/finalizers"}]' 2>/dev/null || true
+          sleep 5
+        fi
       fi
       
-      # Step 3: Create fresh PVC
-      info "  Step 3: Creating PVC with $ACCESS_MODE mode..."
+      # Step 4: Create fresh PVC
+      info "  Step 4: Creating PVC with $ACCESS_MODE mode..."
       cat <<EOFPVC | retry_command kubectl apply -f -
     apiVersion: v1
     kind: PersistentVolumeClaim
@@ -561,8 +590,8 @@ data:
         exit 1
       fi
       
-      # Step 4: Configure registry to use PVC
-      info "  Step 4: Configuring registry storage with Managed state..."
+      # Step 5: Configure registry to use PVC with Managed state
+      info "  Step 5: Configuring registry storage with Managed state..."
       PATCH="{\"spec\":{\"storage\":{\"managementState\":\"Managed\",\"pvc\":{\"claim\":\"image-registry-storage\"}},\"replicas\":$REPLICAS,\"rolloutStrategy\":\"$ROLLOUT_STRATEGY\"}}"
       retry_command kubectl patch \
         config.imageregistry.operator.openshift.io/cluster \
@@ -703,26 +732,31 @@ data:
     # The operator needs time to propagate the service hostname configuration
     # to ImageStream objects. We poll by creating a test ImageStream and
     # checking if it gets the dockerImageRepository field populated.
+    #
+    # Note: On OpenShift 4.18.30, .status.internalRegistryHostname may never
+    # be populated, but ImageStreams will still work. We test actual ImageStream
+    # functionality rather than relying on that field.
     info "  Waiting for registry operator to complete reconciliation..."
+    info "  This may take several minutes on fresh clusters..."
     
     RECONCILE_TEST_IS="registry-reconcile-test-$RANDOM"
     oc create imagestream "$RECONCILE_TEST_IS" \
       -n jam-in-a-box >/dev/null 2>&1
     
     RECONCILE_SUCCESS=false
-    for i in {1..30}; do
+    for i in {1..300}; do
       DOCKER_REPO=$(oc get imagestream "$RECONCILE_TEST_IS" \
         -n jam-in-a-box \
         -o jsonpath='{.status.dockerImageRepository}' 2>/dev/null)
       
       if [ -n "$DOCKER_REPO" ]; then
-        success "  Registry operator reconciliation complete"
+        success "  Registry operator reconciliation complete (${i}s)"
         RECONCILE_SUCCESS=true
         break
       fi
       
-      if [ $i -eq 1 ] || [ $((i % 5)) -eq 0 ]; then
-        info "  Waiting for ImageStream integration (${i}s elapsed)..."
+      if [ $i -eq 1 ] || [ $((i % 10)) -eq 0 ]; then
+        info "  Still waiting for ImageStream integration (${i}s elapsed)..."
       fi
       sleep 1
     done
@@ -732,8 +766,13 @@ data:
       -n jam-in-a-box >/dev/null 2>&1
     
     if [ "$RECONCILE_SUCCESS" != "true" ]; then
-      error "Registry operator did not complete reconciliation within 30s"
+      error "Registry operator did not complete reconciliation within 5 minutes"
       error "ImageStreams may not work correctly for builds"
+      error ""
+      error "Debug commands:"
+      error "  oc get config.imageregistry.operator.openshift.io/cluster -o yaml"
+      error "  oc get deployment image-registry -n openshift-image-registry"
+      error "  oc logs -n openshift-image-registry deployment/cluster-image-registry-operator --tail=50"
       exit 1
     fi
     
