@@ -572,16 +572,54 @@ data:
     
     info "Phase 7: Verifying build functionality..."
     
+    # Wait for registry operator to complete internal reconciliation
+    # The operator needs time to propagate the service hostname configuration
+    # to ImageStream objects. We poll by creating a test ImageStream and
+    # checking if it gets the dockerImageRepository field populated.
+    info "  Waiting for registry operator to complete reconciliation..."
+    
+    RECONCILE_TEST_IS="registry-reconcile-test-$RANDOM"
+    oc create imagestream "$RECONCILE_TEST_IS" \
+      -n jam-in-a-box >/dev/null 2>&1
+    
+    RECONCILE_SUCCESS=false
+    for i in {1..30}; do
+      DOCKER_REPO=$(oc get imagestream "$RECONCILE_TEST_IS" \
+        -n jam-in-a-box \
+        -o jsonpath='{.status.dockerImageRepository}' 2>/dev/null)
+      
+      if [ -n "$DOCKER_REPO" ]; then
+        success "  Registry operator reconciliation complete"
+        RECONCILE_SUCCESS=true
+        break
+      fi
+      
+      if [ $i -eq 1 ] || [ $((i % 5)) -eq 0 ]; then
+        info "  Waiting for ImageStream integration (${i}s elapsed)..."
+      fi
+      sleep 1
+    done
+    
+    # Clean up reconciliation test ImageStream
+    oc delete imagestream "$RECONCILE_TEST_IS" \
+      -n jam-in-a-box >/dev/null 2>&1
+    
+    if [ "$RECONCILE_SUCCESS" != "true" ]; then
+      error "Registry operator did not complete reconciliation within 30s"
+      error "ImageStreams may not work correctly for builds"
+      exit 1
+    fi
+    
+    # Now create the actual test ImageStream for Phase 7 verification
     TEST_IS="registry-test-$RANDOM"
     
-    # Create test ImageStream
     info "  Creating test ImageStream: $TEST_IS..."
     oc create imagestream "$TEST_IS" \
       -n jam-in-a-box >/dev/null 2>&1
     
-    # Wait for ImageStream to get dockerImageRepository
+    # Should get dockerImageRepository immediately now
     TEST_SUCCESS=false
-    for i in {1..15}; do
+    for i in {1..5}; do
       DOCKER_REPO=$(oc get imagestream "$TEST_IS" \
         -n jam-in-a-box \
         -o jsonpath='{.status.dockerImageRepository}' 2>/dev/null)
@@ -592,8 +630,7 @@ data:
         TEST_SUCCESS=true
         break
       fi
-      info "  Waiting for ImageStream configuration (attempt $i/15)..."
-      sleep 2
+      sleep 1
     done
     
     # Clean up test ImageStream
