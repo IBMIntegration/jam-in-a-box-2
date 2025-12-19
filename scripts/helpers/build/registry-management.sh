@@ -6,6 +6,67 @@ set -e
 # Registry Management Functions
 # =============================================================================
 
+function waitForRegistryReady() {
+  local namespace="${1:-$NAMESPACE}"
+  local timeout="${2:-60}"
+  
+  log_debug "Polling for registry readiness by testing build controller acceptance"
+  
+  # The build controller checks for internalRegistryHostname in the registry status
+  # We need to wait for this to be populated, or for builds to actually work
+  log_debug "Checking if registry status.internalRegistryHostname is set..."
+  
+  local ready=false
+  local internalHostname=""
+  
+  for i in $(seq 1 "$timeout"); do
+    # Check if internalRegistryHostname is set (this is what build controller checks)
+    internalHostname=$(oc get config.imageregistry.operator.openshift.io/cluster \
+      -o jsonpath='{.status.internalRegistryHostname}' 2>/dev/null || echo "")
+    
+    if [[ -n "$internalHostname" ]]; then
+      log_debug "Registry internalRegistryHostname is set: $internalHostname"
+      ready=true
+      break
+    fi
+    
+    # Fallback: try creating a test ImageStream and see if it gets configured
+    if [[ $i -eq 15 ]] || [[ $i -eq 30 ]] || [[ $i -eq 45 ]]; then
+      log_debug "internalRegistryHostname not set after ${i}s, testing ImageStream fallback..."
+      local testImageStream="registry-ready-test-$$-$RANDOM"
+      
+      if oc create imagestream "$testImageStream" -n "$namespace" >/dev/null 2>&1; then
+        sleep 2
+        local dockerRepo
+        dockerRepo=$(oc get imagestream "$testImageStream" -n "$namespace" \
+          -o jsonpath='{.status.dockerImageRepository}' 2>/dev/null)
+        oc delete imagestream "$testImageStream" -n "$namespace" >/dev/null 2>&1 || true
+        
+        if [[ -n "$dockerRepo" ]]; then
+          log_debug "ImageStream is working with: $dockerRepo"
+          log_debug "Build controller may accept this even without internalRegistryHostname"
+          ready=true
+          break
+        fi
+      fi
+    fi
+    
+    if [[ $i -eq 1 ]] || [[ $((i % 10)) -eq 0 ]]; then
+      log_debug "Waiting for registry to be accepted by build controller (${i}s elapsed)..."
+    fi
+    sleep 1
+  done
+  
+  if [[ "$ready" == "true" ]]; then
+    log_debug "Registry appears ready for build operations"
+    return 0
+  else
+    log_warning "Registry readiness could not be confirmed within ${timeout}s"
+    log_warning "Builds may still fail - will attempt anyway"
+    return 1
+  fi
+}
+
 function checkRegistryOperator() {
   local registryAvailable managementState storageConfigured
   
@@ -244,7 +305,9 @@ function forceRegistryRefresh() {
   
   if [[ -n "$STUCK_BUILDS" ]]; then
     log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
-    sleep 30
+    if ! waitForRegistryReady "$NAMESPACE" 30; then
+      log_warning "Registry may not be fully ready, proceeding anyway"
+    fi
     # Delete them after giving them a chance to transition
     oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | \
       awk '$3=="New" {print $1}' | \
@@ -302,7 +365,9 @@ function validateImageStreamConfiguration() {
   # Wait a bit more and check if any builds are stuck in New state
   if oc get builds -n "$NAMESPACE" --no-headers 2>/dev/null | grep -q "New"; then
     log_info "Detected existing builds in 'New' state, waiting for registry to settle..."
-    sleep 30
+    if ! waitForRegistryReady "$NAMESPACE" 30; then
+      log_warning "Registry may not be fully ready, proceeding anyway"
+    fi
   fi
   
   log_debug "ImageStream configuration validation passed"
