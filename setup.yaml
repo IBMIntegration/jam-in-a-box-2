@@ -149,13 +149,13 @@ data:
     set -e
     
     source /scripts/logs.sh
-    
+
     info "Validating cluster provisioning pipeline..."
     
     # Check if cp4i-demo pipeline exists
     if ! kubectl get pipeline cp4i-demo -n default >/dev/null 2>&1; then
       info "No cp4i-demo pipeline found - skipping validation"
-      return 0
+      exit 0
     fi
     
     # Find the most recent PipelineRun for cp4i-demo
@@ -167,7 +167,7 @@ data:
     if [ -z "$PIPELINE_RUN" ]; then
       warning "No PipelineRuns found for cp4i-demo pipeline"
       warning "This may indicate the cluster provisioning did not complete"
-      return 0
+      exit 0
     fi
     
     info "Found PipelineRun: $PIPELINE_RUN"
@@ -248,7 +248,7 @@ data:
     fi
     
     success "Pipeline validation passed: $TOTAL_TASKS tasks completed successfully"
-    return 0
+    exit 0
 
   auth-config.sh: |
     #!/bin/bash
@@ -841,8 +841,8 @@ data:
     /scripts/auth-config.sh
 
     # Validate cluster provisioning pipeline completed successfully
-    /scripts/validate-pipeline-run.sh
-
+    /scripts/validate-pipeline-run.sh; then
+    
     # Check for optional parameters ConfigMap first
     info "Checking for custom parameters..."
     PARAMETERS=""
