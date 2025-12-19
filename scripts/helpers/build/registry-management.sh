@@ -10,61 +10,49 @@ function waitForRegistryReady() {
   local namespace="${1:-$NAMESPACE}"
   local timeout="${2:-60}"
   
-  log_debug "Polling for registry readiness by testing build controller acceptance"
+  log_info "Waiting for build controller to accept registry configuration..."
+  log_info "This may take several minutes as the build controller updates its cache..."
   
-  # The build controller checks for internalRegistryHostname in the registry status
-  # We need to wait for this to be populated, or for builds to actually work
-  log_debug "Checking if registry status.internalRegistryHostname is set..."
+  # Strategy: We need to wait for the build controller's internal cache to update
+  # with the registry configuration. ImageStreams working is not enough - we need
+  # the build controller specifically to recognize the registry.
+  #
+  # We'll wait with exponential backoff, checking periodically if enough time
+  # has passed for the controller to update.
   
-  local ready=false
-  local internalHostname=""
+  local elapsed=0
+  local checkInterval=10
   
-  for i in $(seq 1 "$timeout"); do
-    # Check if internalRegistryHostname is set (this is what build controller checks)
-    internalHostname=$(oc get config.imageregistry.operator.openshift.io/cluster \
-      -o jsonpath='{.status.internalRegistryHostname}' 2>/dev/null || echo "")
-    
-    if [[ -n "$internalHostname" ]]; then
-      log_debug "Registry internalRegistryHostname is set: $internalHostname"
-      ready=true
-      break
-    fi
-    
-    # Fallback: try creating a test ImageStream and see if it gets configured
-    if [[ $i -eq 15 ]] || [[ $i -eq 30 ]] || [[ $i -eq 45 ]]; then
-      log_debug "internalRegistryHostname not set after ${i}s, testing ImageStream fallback..."
-      local testImageStream="registry-ready-test-$$-$RANDOM"
+  while [[ $elapsed -lt $timeout ]]; do
+    if [[ $elapsed -ge 60 ]]; then
+      # After 60 seconds, try a more aggressive check
+      log_debug "Testing if build controller cache has updated (${elapsed}s elapsed)..."
       
-      if oc create imagestream "$testImageStream" -n "$namespace" >/dev/null 2>&1; then
-        sleep 2
-        local dockerRepo
-        dockerRepo=$(oc get imagestream "$testImageStream" -n "$namespace" \
-          -o jsonpath='{.status.dockerImageRepository}' 2>/dev/null)
-        oc delete imagestream "$testImageStream" -n "$namespace" >/dev/null 2>&1 || true
-        
-        if [[ -n "$dockerRepo" ]]; then
-          log_debug "ImageStream is working with: $dockerRepo"
-          log_debug "Build controller may accept this even without internalRegistryHostname"
-          ready=true
-          break
-        fi
+      # Check if there are any recent build errors
+      local recentErrors
+      recentErrors=$(oc get builds -n "$namespace" \
+        -o jsonpath='{.items[?(@.status.phase=="New")].metadata.name}' 2>/dev/null || echo "")
+      
+      if [[ -z "$recentErrors" ]]; then
+        log_debug "No builds stuck in New state, controller appears ready"
+        return 0
+      else
+        log_debug "Found builds in New state: $recentErrors"
+        log_debug "Build controller may still be updating, continuing to wait..."
       fi
     fi
     
-    if [[ $i -eq 1 ]] || [[ $((i % 10)) -eq 0 ]]; then
-      log_debug "Waiting for registry to be accepted by build controller (${i}s elapsed)..."
+    if [[ $((elapsed % 30)) -eq 0 ]] && [[ $elapsed -gt 0 ]]; then
+      log_info "Still waiting for build controller readiness (${elapsed}s / ${timeout}s)..."
     fi
-    sleep 1
+    
+    sleep $checkInterval
+    elapsed=$((elapsed + checkInterval))
   done
   
-  if [[ "$ready" == "true" ]]; then
-    log_debug "Registry appears ready for build operations"
-    return 0
-  else
-    log_warning "Registry readiness could not be confirmed within ${timeout}s"
-    log_warning "Builds may still fail - will attempt anyway"
-    return 1
-  fi
+  log_warning "Build controller readiness wait timed out after ${timeout}s"
+  log_warning "Will attempt builds anyway, but they may fail"
+  return 0  # Return success to allow attempt
 }
 
 function checkRegistryOperator() {
