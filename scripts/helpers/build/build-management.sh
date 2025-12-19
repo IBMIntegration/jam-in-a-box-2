@@ -328,6 +328,36 @@ function startNewBuild() {
     buildPhase=$(oc get build "$buildName" -n "$NAMESPACE" \
       -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
     
+    # Check for InvalidOutput or other error conditions in build status
+    local buildMessage
+    buildMessage=$(oc get build "$buildName" -n "$NAMESPACE" \
+      -o jsonpath='{.status.message}' 2>/dev/null || echo "")
+    local buildConditions
+    buildConditions=$(oc get build "$buildName" -n "$NAMESPACE" \
+      -o jsonpath='{.status.conditions}' 2>/dev/null || echo "")
+    
+    # Check for registry configuration errors in the message or conditions
+    if [[ "$buildMessage" =~ "registry is not configured" ]] || \
+       [[ "$buildConditions" =~ "registry is not configured" ]]; then
+      log_error "Build rejected: Registry not properly configured for build controller"
+      log_error "Message: $buildMessage"
+      showBuildDiagnostics "$buildName" "$buildConfigName"
+      log_error ""
+      log_error "WHAT THIS MEANS:"
+      log_error "The OpenShift registry is running, but the build controller cannot see it yet."
+      log_error "This can happen when the cluster is still initializing after provisioning."
+      log_error ""
+      log_error "WHAT TO DO:"
+      log_error "1. Wait 5-10 minutes for the cluster to fully stabilize"
+      log_error "2. Clean up and retry the setup:"
+      log_error "   oc delete namespace jam-in-a-box"
+      log_error "   oc apply -f https://raw.githubusercontent.com/IBMIntegration/integration-jam-in-a-box/main/setup.yaml"
+      log_error ""
+      log_error "3. If the error persists after retrying, request a new cluster from"
+      log_error "   IBM Technology Zone (techzone.ibm.com) with the 'CP4I on OCP-V (2.0)' template."
+      return 1
+    fi
+    
     case "$buildPhase" in
       Pending|Running)
         log_success "Build accepted and $buildPhase"
