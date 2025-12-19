@@ -154,8 +154,20 @@ data:
     
     # Check if cp4i-demo pipeline exists
     if ! kubectl get pipeline cp4i-demo -n default >/dev/null 2>&1; then
-      info "No cp4i-demo pipeline found - skipping validation"
-      exit 0
+      echo "===============================================" >&2
+      echo "UNSUPPORTED ENVIRONMENT" >&2
+      echo "===============================================" >&2
+      echo "" >&2
+      echo "This cluster does not have the cp4i-demo pipeline." >&2
+      echo "" >&2
+      echo "Jam-in-a-Box only supports IBM Technology Zone" >&2
+      echo "'CP4I on OCP-V (2.0)' environments." >&2
+      echo "" >&2
+      echo "Please request the correct environment type from:" >&2
+      echo "https://techzone.ibm.com/" >&2
+      echo "" >&2
+      echo "===============================================" >&2
+      error "Unsupported cluster environment"
     fi
     
     # Find the most recent PipelineRun for cp4i-demo
@@ -165,9 +177,17 @@ data:
       -o jsonpath='{.items[-1:].metadata.name}' 2>/dev/null || echo "")
     
     if [ -z "$PIPELINE_RUN" ]; then
-      warning "No PipelineRuns found for cp4i-demo pipeline"
-      warning "This may indicate the cluster provisioning did not complete"
-      exit 0
+      echo "===============================================" >&2
+      echo "NO PIPELINE RUNS FOUND" >&2
+      echo "===============================================" >&2
+      echo "" >&2
+      echo "The cp4i-demo pipeline exists but has never been run." >&2
+      echo "" >&2
+      echo "This indicates the cluster provisioning was not started." >&2
+      echo "Please contact IBM Technology Zone support." >&2
+      echo "" >&2
+      echo "===============================================" >&2
+      error "No pipeline runs found"
     fi
     
     info "Found PipelineRun: $PIPELINE_RUN"
@@ -219,32 +239,32 @@ data:
       error "Cluster provisioning pipeline failed - cannot continue"
     fi
     
-    # Check if pipeline claims success but has too few completed tasks
-    if [ "$PIPELINE_STATUS" = "True" ] && [ "$TOTAL_TASKS" -lt "$EXPECTED_MIN_TASKS" ]; then
+    # Check if pipeline is still running or incomplete
+    if [ "$TOTAL_TASKS" -lt "$EXPECTED_MIN_TASKS" ]; then
       echo "===============================================" >&2
-      echo "CLUSTER PROVISIONING INCOMPLETE" >&2
+      echo "CLUSTER PROVISIONING IN PROGRESS" >&2
       echo "===============================================" >&2
       echo "" >&2
-      echo "The cp4i-demo pipeline run ($PIPELINE_RUN) reported success" >&2
-      echo "but only completed $TOTAL_TASKS tasks (expected at least $EXPECTED_MIN_TASKS)." >&2
+      echo "The cp4i-demo pipeline run ($PIPELINE_RUN) is still running" >&2
+      echo "or has not completed all tasks yet." >&2
       echo "" >&2
-      echo "This indicates the pipeline failed early but incorrectly reported success." >&2
-      echo "The IBM Cloud Pak for Integration is likely NOT properly installed." >&2
+      echo "Current status: $PIPELINE_STATUS (Reason: $PIPELINE_REASON)" >&2
+      echo "Tasks completed: $TOTAL_TASKS / expected $EXPECTED_MIN_TASKS+" >&2
       echo "" >&2
-      echo "REMEDIATION OPTIONS:" >&2
-      echo "1. Check what tasks actually ran:" >&2
-      echo "   oc get pipelinerun $PIPELINE_RUN -n default -o yaml" >&2
+      echo "The IBM Cloud Pak for Integration is still being installed." >&2
       echo "" >&2
-      echo "2. Check for errors in the pipeline logs:" >&2
-      echo "   oc logs -n default \$(oc get pods -n default -l tekton.dev/pipelineRun=$PIPELINE_RUN \\" >&2
-      echo "     --sort-by=.metadata.creationTimestamp -o name | tail -1) --all-containers" >&2
+      echo "PLEASE WAIT:" >&2
+      echo "1. Monitor the pipeline progress:" >&2
+      echo "   oc get pipelinerun $PIPELINE_RUN -n default -w" >&2
       echo "" >&2
-      echo "3. You will likely need to:" >&2
-      echo "   - Request a new cluster from IBM Technology Zone" >&2
-      echo "   - Ensure the cluster provisioning completes successfully before running jam-in-a-box" >&2
+      echo "2. Or watch the pods:" >&2
+      echo "   oc get pods -n default -l tekton.dev/pipelineRun=$PIPELINE_RUN -w" >&2
+      echo "" >&2
+      echo "3. The pipeline typically takes 2-3 hours to complete." >&2
+      echo "   Re-run jam-in-a-box setup after the pipeline finishes successfully." >&2
       echo "" >&2
       echo "===============================================" >&2
-      error "Cluster provisioning incomplete - cannot continue"
+      error "Cluster provisioning still in progress - please wait"
     fi
     
     success "Pipeline validation passed: $TOTAL_TASKS tasks completed successfully"
@@ -841,7 +861,7 @@ data:
     /scripts/auth-config.sh
 
     # Validate cluster provisioning pipeline completed successfully
-    /scripts/validate-pipeline-run.sh; then
+    /scripts/validate-pipeline-run.sh
     
     # Check for optional parameters ConfigMap first
     info "Checking for custom parameters..."
