@@ -131,7 +131,7 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
 1. Create a ConfigMap with your custom parameters.
 
     ```sh
-    oc create configmap -n default jam-setup-params --from-literal=parameters="--navigator-password=jam --debug --fork=capnajax"
+    oc create configmap -n default jam-setup-params --from-literal=parameters="--fork=capnajax --navigator-password=jam --debug"
     ```
 
     The parameters are:

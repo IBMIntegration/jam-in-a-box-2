@@ -811,6 +811,18 @@ data:
     fi
     
     success "Phase 7 complete: Build controller can interact with registry"
+    
+    # CRITICAL: Wait for build controller cache to update
+    # The build controller maintains an internal cache of registry configuration
+    # that is separate from ImageStream functionality. Even though ImageStreams
+    # work immediately, the build controller needs additional time to update its
+    # cache. Without this wait, builds will fail with "registry is not configured".
+    info "Waiting for build controller cache to update..."
+    info "The build controller needs time to refresh its registry configuration."
+    info "This wait prevents 'registry is not configured' errors during builds."
+    sleep 120
+    success "Build controller cache update period complete"
+    
     success "=== Registry Configuration Complete ==="
 
   repo-clone.sh: |
