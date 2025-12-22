@@ -1024,7 +1024,8 @@ data:
         
         # Wait for navigator pod to be ready
         info "Waiting for jam-in-a-box navigator pod to be ready..."
-        for i in {1..60}; do
+        info "This may take several minutes as the image is pulled and the pod starts..."
+        for i in {1..120}; do
           NAV_READY=$(retry_command kubectl get pods -n jam-in-a-box \
             -l app=navigator \
             -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' \
@@ -1034,14 +1035,23 @@ data:
             success "Navigator pod is ready!"
             break
           else
-            info "Waiting for navigator pod (attempt $i/60)..."
+            if [ $((i % 12)) -eq 0 ]; then
+              info "Still waiting for navigator pod (${i} minutes elapsed)..."
+            fi
             sleep 5
           fi
         done
         
         if [ "$NAV_READY" != "True" ]; then
-          warning "Navigator pod not ready after 5 minutes"
+          error "Navigator pod not ready after 10 minutes"
+          error "This indicates a problem with the deployment."
+          error ""
+          error "Checking pod status:"
           retry_command kubectl get pods -n jam-in-a-box -l app=navigator
+          error ""
+          error "Checking pod events:"
+          retry_command kubectl get events -n jam-in-a-box --sort-by=.metadata.creationTimestamp | tail -20
+          exit 1
         else
           echo "=== jam-in-a-box is fully deployed and ready! ==="
         fi
