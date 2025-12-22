@@ -147,6 +147,22 @@ async function generateConfigObj() {
     ]
   });
 
+  // Supporting Services
+  out.links.push({ group: 'Supporting services' });
+  const mailpit = 'pipeline-mailpit-demo-output';
+  host = getResource('ConfigMap', mailpit, 'mailpit-ui-url');
+  username = getResource('ConfigMap', mailpit, 'mailpit-admin-username');
+  password = getResource('ConfigMap', mailpit, 'mailpit-admin-password');
+
+  out.links.push({
+    title: 'Mailpit Web UI',
+    href: host,
+    moreInfo: [
+      monospace('Username', username),
+      monospace('Password', password, true)
+    ]
+  });
+
   // Lab REST client routes
   let routes = configEntries.filter(entry => {
     return entry.kind === 'Route'
