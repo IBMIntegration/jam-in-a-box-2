@@ -263,6 +263,8 @@ getInfo secret tools apim-demo-mgmt-admin-pass
 getInfo route "${JAM_NAMESPACE}" integration
 getInfo secret "${JAM_NAMESPACE}" navigator-credentials
 
+getInfo cm default pipeline-mailpit-demo-output
+
 log_info "Finalizing output files..."
 endFile "$output_file"
 endFile "$secret_file"
