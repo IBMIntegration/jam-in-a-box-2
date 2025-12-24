@@ -103,7 +103,7 @@ data:
 
   oc-tools.sh: |
     #!/bin/bash
-    # Install kubectl and oc CLI tools
+    # Install kubectl, oc, and apic CLI tools
     set -e
     
     source /scripts/logs.sh
@@ -142,6 +142,22 @@ data:
       mv oc /usr/local/bin/
       success "oc installed from GitHub"
     fi
+
+    # Only download from cluster as API Connect cluster should already be
+    # confirmed installed
+    APIM_URL=$(kubectl get route apim-demo-mgmt-api-manager -n tools \
+        -o jsonpath='{.spec.host}' 2>/dev/null)
+    info "Downloading apic from cluster..."
+    curl -kL "https://$APIM_URL/client-downloads/toolkit-linux.tgz" \
+      -o toolkit-linux.tgz 2>/dev/null || info "apic download failed"
+    if [ -f toolkit-linux.tgz ] && tar -tf toolkit-linux.tgz >/dev/null 2>&1; then
+      tar -xf toolkit-linux.tgz && mv apic /usr/local/bin/ && rm toolkit-linux.tgz
+      success "apic installed from cluster"
+      yes | apic version && success "apic CLI is functional"
+    else
+      rm -f toolkit-linux.tgz
+      warning "apic CLI not installed - API Connect may not be available"
+    fi    
 
   validate-pipeline-run.sh: |
     #!/bin/bash
