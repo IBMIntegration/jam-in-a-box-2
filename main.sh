@@ -264,6 +264,7 @@ getInfo route "${JAM_NAMESPACE}" integration
 getInfo secret "${JAM_NAMESPACE}" navigator-credentials
 
 getInfo cm default pipeline-mailpit-demo-output
+getInfo service mailpit mailpit-smtp
 
 log_info "Finalizing output files..."
 endFile "$output_file"

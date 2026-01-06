@@ -153,13 +153,18 @@ async function generateConfigObj() {
   host = getResource('ConfigMap', mailpit, 'mailpit-ui-url');
   username = getResource('ConfigMap', mailpit, 'mailpit-admin-username');
   password = getResource('ConfigMap', mailpit, 'mailpit-admin-password');
+  smtp = getResource('Service', 'mailpit-smtp');
+  smtpPort = smtp.spec.ports.find(p => p.name === 'smtp').port;
+  smtpIP = smtp.spec.clusterIP;
 
   out.links.push({
     title: 'Mailpit Web UI',
     href: host,
     moreInfo: [
       monospace('Username', username),
-      monospace('Password', password, true)
+      monospace('Password', password, true),
+      monospace('SMTP Port', smtpPort),
+      monospace('SMTP Server', `${smtpIP}:${smtpPort}`)
     ]
   });
 

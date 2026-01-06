@@ -12,8 +12,10 @@ The purpose of this document is to establish standards and provide useful tips f
   - [Language](#language)
 - [Cookbook](#cookbook)
   - [Environment recommendations](#environment-recommendations)
-  - [Custom parameter deployments](#custom-parameter-deployments)
-  - [Updating HTML](#updating-html)
+  - [Code Testing](#code-testing)
+    - [Online testing](#online-testing)
+    - [Local testing](#local-testing)
+  - [Deployment testing](#deployment-testing)
 
 ## Standards
 
@@ -49,7 +51,7 @@ Where possible, describe what is happening, not just where to click and what to 
 
 ### Language
 
-1. Use inclusive language.
+1. Use inclusive language. 
     1. Remember that plain language is inclusive language. Unly use metahpores worth explaining.
 1. Speak to the reader in the second person, imperative tense when it makes sense, but be careful about tone.
 1. All code samples **must** use the American dialect of English. Dialect usage is not specified for prose as long as it can be understood globally.
@@ -177,4 +179,3 @@ Custom parameter go in a ConfigMap in the `default` namespace called `jam-setup-
     ```sh
     oc -n jam-in-a-box get po -w
     ```
-
