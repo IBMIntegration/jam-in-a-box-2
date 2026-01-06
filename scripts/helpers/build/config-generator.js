@@ -163,8 +163,7 @@ async function generateConfigObj() {
     moreInfo: [
       monospace('Username', username),
       monospace('Password', password, true),
-      monospace('SMTP Port', smtpPort),
-      monospace('SMTP Server', `${smtpIP}:${smtpPort}`)
+      monospace('SMTP', `${smtpIP}:${smtpPort}`)
     ]
   });
 
