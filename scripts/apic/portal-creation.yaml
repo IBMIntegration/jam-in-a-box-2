@@ -1,0 +1,351 @@
+steps:
+
+  - name: Create Portal - Get Identity Providers
+    run: |
+
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/cloud/provider/identity-providers' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -b 'CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --insecure
+    result: |
+      {
+        "total_results": 2,
+        "results": [
+            {
+                "name": "default-idp-2",
+                "title": "API Manager User Registry",
+                "default": false,
+                "registry_type": "lur",
+                "user_managed": true,
+                "realm": "provider/default-idp-2"
+            },
+            {
+                "name": "integration-keycloak",
+                "title": "Cloud Pak User Registry",
+                "default": true,
+                "registry_type": "oidc",
+                "user_managed": false,
+                "realm": "provider/integration-keycloak",
+                "oidc_type": "standard"
+            }
+        ]
+      }
+
+  - name: Create Portal - Create Portal
+    run: |
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/cp4i-demo-org/portal-services' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -b 'CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --insecure
+    result: |
+      {
+        "total_results": 1,
+        "results": [
+            {
+                "type": "portal_service",
+                "api_version": "2.0.0",
+                "id": "ef5c5063-e566-48af-8707-76079ddcf8e6",
+                "name": "portal-service",
+                "title": "portal-service",
+                "state": "ready",
+                "web_endpoint_base": "https://apim-demo-ptl-portal-web-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/",
+                "endpoint": "https://apim-demo-ptl-portal-director-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com",
+                "endpoint_tls_client_profile_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/a24819e7-ed3c-4b67-a63a-3f91905fed3f/tls-client-profiles/0a8d71f2-5271-4679-b252-7096ad9af2fd",
+                "owned": true,
+                "webhook_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/cloud/webhooks/5c2796bb-fc60-4a3f-910b-0c552d7b8dc4",
+                "availability_zone_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/a24819e7-ed3c-4b67-a63a-3f91905fed3f/availability-zones/cfda502e-d6f7-47ff-bbbe-669f8d91b9b5",
+                "service_version": "10.0.8.5-20251104-1953",
+                "communication_kind": "external",
+                "service_supported_features": [],
+                "created_at": "2025-12-23T14:14:14.000Z",
+                "updated_at": "2025-12-23T14:14:16.000Z",
+                "url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6/portal-services/ef5c5063-e566-48af-8707-76079ddcf8e6",
+                "org_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6"
+            }
+        ]
+    }
+  - name: Create Portal - Get Catalog Settings
+    run: |
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/settings' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -b 'CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --insecure
+    result: |
+      {
+          "type": "catalog_setting",
+          "api_version": "2.0.0",
+          "name": "catalog-setting",
+          "user_registry_default_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/configured-catalog-user-registries/052cb0b8-779d-451e-8701-66fb7e130aa7",
+          "production_mode": false,
+          "portal": {
+              "type": "none"
+          },
+          "product_lifecycle_approvals": [],
+          "task_self_approval": false,
+          "allowed_product_visibility": {
+              "view": {
+                  "type": "public",
+                  "enabled": false
+              },
+              "subscribe": {
+                  "type": "authenticated",
+                  "enabled": false
+              }
+          },
+          "application_lifecycle": {
+              "enabled": false
+          },
+          "consumer_self_service_onboarding": true,
+          "consumer_self_service_onboarding_approval": false,
+          "consumer_org_invitations_enabled": true,
+          "consumer_org_invitation_roles": [
+              "administrator",
+              "developer",
+              "viewer"
+          ],
+          "invitation_ttl": 172800,
+          "vanity_api_endpoint": {
+              "enabled": false,
+              "vanity_api_base_endpoints": []
+          },
+          "spaces_enabled": false,
+          "custom_notification_templates_enabled": false,
+          "email_sender": {
+              "custom": false
+          },
+          "hash_client_secret": false,
+          "subscription_task_approval_retention": 60,
+          "default_catalog": false,
+          "product_publish_validations": [
+              "emptyPathCheck_catalogScope",
+              "customPolicySchema_validation",
+              "enhancedOAIValidation_catalogScope"
+          ],
+          "override_invitation_ttl_for_all_consumer_orgs": false,
+          "gateway_supported_protocols": [
+              "https",
+              "wss"
+          ],
+          "consumer_self_service_onboarding_ttl": 259200,
+          "consumer_catalog_enabled": true,
+          "protected_properties": [],
+          "created_at": "2025-12-23T14:14:33.000Z",
+          "updated_at": "2025-12-23T14:14:33.000Z",
+          "org_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6",
+          "catalog_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578",
+          "url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/settings"
+      }
+  - name: Create Portal - Get Org Details
+    run: |
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -b 'CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --insecure
+    result: |
+      {
+          "type": "org",
+          "org_type": "provider",
+          "api_version": "2.0.0",
+          "id": "269ef785-87bf-48d4-b321-c269b1cc2da6",
+          "name": "cp4i-demo-org",
+          "title": "CP4I Demo Provider Org",
+          "state": "enabled",
+          "owner_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/user-registries/a24819e7-ed3c-4b67-a63a-3f91905fed3f/8fd52941-7cd6-49d6-9e28-09fd9cb57cc4/users/c5023bcb-878d-461b-8ec8-03b37a1134e7",
+          "created_at": "2025-12-23T14:14:31.000Z",
+          "updated_at": "2025-12-23T14:14:31.000Z",
+          "url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6"
+      }
+  - name: Create Portal - Get Catalog Details
+    run: |
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -b 'CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --insecure
+    result: |
+      {
+        "type": "catalog",
+        "api_version": "2.0.0",
+        "id": "4f70b754-8b34-4c35-9248-a470f7e06578",
+        "name": "sandbox",
+        "title": "Sandbox",
+        "summary": "Sandbox Catalog",
+        "owner_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/user-registries/a24819e7-ed3c-4b67-a63a-3f91905fed3f/8fd52941-7cd6-49d6-9e28-09fd9cb57cc4/users/c5023bcb-878d-461b-8ec8-03b37a1134e7",
+        "created_at": "2025-12-23T14:14:32.000Z",
+        "updated_at": "2025-12-23T14:14:32.000Z",
+        "org_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6",
+        "url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578"
+      }
+  - name: subscription_task_approval_retention
+    run: | 
+      curl 'https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/uia/token' \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: en-US,en;q=0.7' \
+        -H 'Cache-Control: no-cache' \
+        -H 'Connection: keep-alive' \
+        -H 'Content-Type: application/json' \
+        -b 'UIA_TOKENS=j%3A%7B%22access_token%22%3A%22eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJhdWQiOiIvYXBpL2Nsb3VkL3JlZ2lzdHJhdGlvbnMvOGVmMWU2MjYtODQ1ZS00N2Q2LWJmMjktZGFjMjFlZGUxYmQzIiwic3ViIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNC91c2Vycy9jNTAyM2JjYi04NzhkLTQ2MWItOGVjOC0wM2IzN2ExMTM0ZTciLCJpc3MiOiJJQk0gQVBJIENvbm5lY3QiLCJqdGkiOiIyMjA4NzM3Zi01MjFmLTRjOTQtOTBiMy0xNGRjMTUyNzQ3MjUiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImV4cCI6MTc2NjUzMDEzNiwiaWF0IjoxNzY2NTI5ODM3LCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVhbG0iOiJwcm92aWRlci9pbnRlZ3JhdGlvbi1rZXljbG9hayIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInVzZXJuYW1lIjoiaW50ZWdyYXRpb24tYWRtaW4iLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJpZF90b2tlbiI6ImV5SmhiR2NpT2lKU1V6STFOaUlzSW5SNWNDSTZJa3BYVkNJc0ltdHBaQ0k2SWpWa1ltVTBOMkk1TFdJeVlXUXROR0U1WmkwNFl6RTBMVEl6TW1JMk9EVm1NV1EzWmlKOS5leUoxYzJWeWJtRnRaU0k2SW1sdWRHVm5jbUYwYVc5dUxXRmtiV2x1SWl3aWJHRnpkRjl1WVcxbElqb2lRV1J0YVc1cGMzUnlZWFJ2Y2lJc0ltWnBjbk4wWDI1aGJXVWlPaUpKYm5SbFozSmhkR2x2YmlJc0ltbGhkQ0k2TVRjMk5qVXlPVGd6TjMwLm1PNzJEU1VsUWpabmVYeXFfZWctX05FbW95d2t6a1hacUt4elY3LVFDdE4xQzVBVzN1QTdhY2lhbmJycHJuRGhScWZXYXRMdWUzRlN2QlJLbkpLXzBxNkE3LWpzYXA5SkdCQVA5aGtTYnJ5c0FhSW9OQlNOQk5DZG1DWTk4WDVJMDF3M2Zya1g0ZlNIS2RxdWpYcFV1SGRTSl9wZ2tnNEZzX010dUdzUVVTQTRhYWJtQkNiQjZNQUtmMlJlNG81TV9pUmlYcHdweWwtMDZSODBLMmVSdnN3S3huUWVxQXNSVEdBV3J5X1ZyTU9DNEFnWVJEeC1uVnZQUy0zRHVIX2poSUVVQUFYM1hsQUJDZjR2LVVscWNpd0N5LW0tRU5HMENtMG9tTVE0RXVydHMzYVhxckk0NjNGaUEyUUVPbFhFTTBSY04zX25Pdmo1c1pXdFhaRGxWdyJ9.Ho63lpxUbT4dnJEqNpf-4ruDzVle2520qmoCKVwF3UEUaScrTtt56_AW2UkansDf6lQbXyyBmuzbR_hf8o9HmsrgjGXtF_APBSeBJ2waGKlFE-Vl4k0kK1l_wkV-7SbtltPYIfslWTaoi7AWXDS_6b5eCQMqVFkokl_fJWWz7fOXmwAw5rAjDZlvjDbg7KyoXWbbj_D53RORQNyofNMKyHIK8fYXIKOjZiKl185xydqvTZjG-L_PNBlvWNei5vAazvYAdNROv52T-TVSzFh1j2sA6KGdCrSJTACaRDxqo8RtMAqoFBUELOVn1s-8Ky84bwDjj-4-rIY36WYWRMyl5w%22%2C%22token_type%22%3A%22Bearer%22%2C%22expires_in%22%3A299%2C%22proxied_access_token%22%3Anull%2C%22refresh_token%22%3A%22e284b832-e43f-4026-94ef-be5e85ffa4f4%22%2C%22refresh_expires_in%22%3A27047%2C%22proxied_id_token%22%3Anull%2C%22expires_at%22%3A1766530136311%2C%22refresh_expires_at%22%3A1766556884311%7D; UIA_PROXY_TOKENS=j%3A%7B%22proxied_access_token%22%3A%22eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJxaEY0YWRta0VLLWU1eTlqdUo2ZS1uTEVGSGc5RWplNEVLZWlQdGQxVmM0In0.eyJleHAiOjE3NjY1MzAxMzYsImlhdCI6MTc2NjUyOTgzNiwianRpIjoib25ydGFjOjI4ZDQwODA3LTM1YWItMmQ2Ni04MGQ1LTliMTNhMDYxYjZlMSIsImlzcyI6Imh0dHBzOi8va2V5Y2xvYWstaWJtLWNvbW1vbi1zZXJ2aWNlcy5hcHBzLml0ei1oamM4eWkuaHViMDEtbGIudGVjaHpvbmUuaWJtLmNvbS9yZWFsbXMvY2xvdWRwYWsiLCJzdWIiOiIwMDk1OWU1My0xZmNjLTQwMmUtYWM2Ny03MDA5MmNjY2E1YzgiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhcGltLWRlbW8taW50ZWdyYXRpb24ta2V5Y2xvYWstY2xpZW50Iiwic2lkIjoiM2U1MDllMjEtMTgxZC0yZjNmLWE3MWYtZjRjZDg3OGY3N2RlIiwicmVzb3VyY2VfYWNjZXNzIjp7ImludGVncmF0aW9uLXdjenp2Ijp7InJvbGVzIjpbImFkbWluIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiSW50ZWdyYXRpb24gQWRtaW5pc3RyYXRvciIsInByZWZlcnJlZF91c2VybmFtZSI6ImludGVncmF0aW9uLWFkbWluIiwiZ2l2ZW5fbmFtZSI6IkludGVncmF0aW9uIiwiZmFtaWx5X25hbWUiOiJBZG1pbmlzdHJhdG9yIn0.BcVQKib9HaAcqP8NtKGYb0CMWypoXW2LgeTXu3wR4R_TIgtJTdKoi5PGeabVUYbyCia-3KwMndATP3oQnhcnVSF5V4iHpXjY6X-d9mZGIltsCpbWkUILVpvsqbP3PseYQWwdLqdkx6Dw5xqPUCUdUb0EMxSot7Gx86kmZSb_uCB1r_3LfIrVkr6sVJpY1-5xQvFTWCYatE5mU1G3FmRR6BdpH3VCcwY3p8tB9G6qVPkgD1Es1-yuLGtO-dtV5TqNxCG524OinY2IkZssFVNUJwEWhFXHsZnUfnZ6c3-XOhWaphPpQokbFRm9h8czJfZ8uFOciZD8QdNL8HtfJ8L2_w%22%7D; CISESSIONIDPR07A=PBC5YS:1086799006; notice_preferences=0:; notice_gdpr_prefs=0:; userContext=5a78463a-8e75-4baf-b5fd-7b4b4e2cc501|0|0|0|US|MN|1|0:|implied|zz|n/a|n/a|n/a|n/a|63917991738592904749153181255648390861; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_consent=general%3Dout; com.ibm.cloud.iam.LoggedIn.prod=1; kndctr_D10F27705ED7F5130A495C99_AdobeOrg_identity=CiY2MzkxNzk5MTczODU5MjkwNDc0OTE1MzE4MTI1NTY0ODM5MDg2MVIQCKD5kvWgMxgBKgNWQTYwA%5FABqO6Dk7Mz; AMCV_D10F27705ED7F5130A495C99%40AdobeOrg=MCMID|63917991738592904749153181255648390861; ak_bmsc=E0808C81EBD1334FF8267DF7AB6A7B03~000000000000000000000000000000~YAAQs6A7FzXSRC+bAQAAr5kzTR4NMWArbNsP6CZguZK5kNlugfLBRHb/5euo8wiIefhvIrnr0KtQ42DvZ28LK3mnznxh8lZ1qpTQwzowBTYg5TNcdsidnoCsfLK6yRk2NlaYxYoQBckH5a7K/D+TObTuOHQjbkfKT2x1+ZY9dnPbMgzhYN+1Tgb50Zd4OvcZtRvQue+ty+OUIhMGtOEeed4ZUe5XNhN/lpO9tF7ztaieiPaH25Gc96WYSrfAl5tTTI0uALUCrQoptkXGE0s0CpficrTTnmeo0DDS4W4aKPEhCDds80HZ7dvWSSqH60PJ0xNj4oY1GgYjMUs6tKY0+BNrOH4A2KW7LKSq2ldxhlxgrx7bQAJcTonY3Vdjd9gW1MB4kdVWvA==; _abck=32A1E28DF75EAF53FB38FD6D71F21ECE~0~YAAQs6A7F2jSRC+bAQAARJozTQ/DuHRNeLvGV+mqqeQn7toRx/OUIIkVnjWTQZ+Sj2+8TCwShyASW3JeIksKFKw3G86C618c+MIwiKUpZ5mYOMUgOEsBrC+rodBTf9Gh/RXQb1rsx8YbNpT+p8JjZAPN4CN8QWmWQRcb1IY4xqtzJlMBRS33nzf4Sfh/xA0uSApCmhleMz8REPUE72byWsXofYcg94jYSgKhDI5SqvuSptKtaTUDWvYGXTDFB2h3wnA8tzbkU/4Xe8AAh/J3oGaUhjxoeKTSv3faMIHCNU0NXCEx1aOIhah/stX6lkji7S7cssgi/8kDkclEL2/kCkSmEUrUxswHCREgmeaRv3tBSpTepTTR3wQtU5YvxR5buTb3+5GfYy6cy+Id3cMy7VV8Gs/V81Vzf51wOQsse86PORYAFLwN1OGvJmETMly65cVFwzjHRwfYPn5I/v+3q5KxbYJXYo9gUyJRGXMSvOeeY6sLube7hxqqK4bquES4wxjtyC+/NGu7M6c2wgeOhp+2G4XS3Zg08JG8jweFJkDTtAx9XOyHYtdwOYrm0j/S07VcIgGz34bJmK2xaBLiFIWVsxOpiPRWfLQ8wF0TPQlAc4NGUT/miul5NgocSnG+iBVSkGtxicjT4NhFHjogcK1xEgO+O5NGoKyQ9ytSI2spfk6ZCIz0jPXNkcrbVzS9z/FDQ3J/COtu06vaXI3yKtSx7FR7k4DqrTbT+JBsH7oK1yVS0eO2o7m0Vz2l0W6qKGWcQQX8E0X86maXENqINB4XkAaXsEB1uQ9d+fsp0uMeGl/m/TyIQBWdov+8BueanDOdnoypqIXimBG6oaf3qJwzpps1z18hLt0MwIZJE8CBrrtjQ/Dm~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f9ep86X66Xj2kmWCqLJHs7iYfP8HJomo+%2fUr72pgYc0bJo3AL%2fuotKsCFwR5r4+pMFB2Rx4EJOh63t1RZs4kAK5ielEM4hZgxeGD~-1; pageviewContext=ae449030-0c27-4969-ba71-d961c627066a; OPTOUTMULTI=0:0%7Cc1:1%7Cc2:1%7Cc3:1; notice_behavior=implied|us; utag_main=v_id:019b4d339c3c005acc73f0a9152805075005e06d00bd0$_sn:1$_se:5$_ss:0$_st:1766528600722$ses_id:1766526786621%3Bexp-session$_pn:2%3Bexp-session$is_country_requiring_explicit_consent:false; bm_sz=0828D103113269CDD479DEE81B22E011~YAAQs6A7F6+BTC+bAQAAl1BeTR76rnzgSgDjut9DMbhp+zsF+yBcgMEFMWmRjnNImHF2x+HI8llYaSpqEu1BiMjp2pV9X9AKt77L9FcykL+uSa600dIGRD40jgpMhy/zmblh3uSpq7qBZTd1525kT2gDB98dpUMFLSNhq6NlJo+Y5Lwb4cdKNz+FfR0XD8uzfJYAaBLDQ82Vbqw8ZRqRnPvv9G3FkvjWKp2kdzgZE2TvTWgQbF5u+TpHu0WQl5OdZL+JGILFA4tIeuOXFlKmM9fLMOWkfpmNShbEJ1Gy8Gsr2Gcpji71hNiAzrswWLVGPzQ7aYsAoUP07v6XwQtqNvHrzD1ZmCWrJsDNjtlKzl73K0t/kFfrVwh42lNsV1E7D5khxapzhj+0UjNBwfbOGf64xYrXcFpEHtw=~4469810~4473144; bm_sv=C04F07BDC9819833A1B72BDBBA2D6C49~YAAQs6A7F7+DTC+bAQAAQ1xeTR7ePeDyZuD+kpKdl1xHodFjB7Ni4ryG/bK8r5yDnEOI1IF31efeuz/tu8IMMWQRufOVLvNA2czIMRuQsTo5dJNczt8qP7AB/hjQR9sV+GPjKt/qxH+2kxXZWv3HmWhXXfj+Gzm/15kVHQLRuyy/7i8p07ZdLc/kQfr4MV8e4+Vf4UkRkJiuO4vnY0yyA6ZcOxr7e2TdPEQKOOAOTusvZ3/pFkalOSlWdFUd~1; 616647dcff720af398ce7bf4f414dea4=03e689c13a7a426fdbe945a351914944' \
+        -H 'Origin: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com' \
+        -H 'Pragma: no-cache' \
+        -H 'Referer: https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/manager/cp4i-demo-org/manage/catalog/4f70b754-8b34-4c35-9248-a470f7e06578/settings/portal/create-portal/' \
+        -H 'Sec-Fetch-Dest: empty' \
+        -H 'Sec-Fetch-Mode: cors' \
+        -H 'Sec-Fetch-Site: same-origin' \
+        -H 'Sec-GPC: 1' \
+        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36' \
+        -H 'sec-ch-ua: "Brave";v="143", "Chromium";v="143", "Not A(Brand";v="24"' \
+        -H 'sec-ch-ua-mobile: ?0' \
+        -H 'sec-ch-ua-platform: "macOS"' \
+        -H 'x-ibm-realm: provider/common-services' \
+        --data-raw '{"refresh":true}' \
+        --insecure    
+    result: |
+      {
+        "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImI5MmFmNDRhLTJlNjYtNDY0MS1iN2Q0LWVkZDc1ZDI1MTA1YiJ9.eyJqdGkiOiI0ZmYzZWU3NC1mM2ZjLTQzN2QtOGQ3NS0yNGNmZmI0NDU5ZGMiLCJuYW1lc3BhY2UiOiJhMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2Y6OGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0OmM1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImF1ZCI6Ii9hcGkvY2xvdWQvcmVnaXN0cmF0aW9ucy84ZWYxZTYyNi04NDVlLTQ3ZDYtYmYyOS1kYWMyMWVkZTFiZDMiLCJzdWIiOiIvYXBpL3VzZXItcmVnaXN0cmllcy9hMjQ4MTllNy1lZDNjLTRiNjctYTYzYS0zZjkxOTA1ZmVkM2YvOGZkNTI5NDEtN2NkNi00OWQ2LTllMjgtMDlmZDljYjU3Y2M0L3VzZXJzL2M1MDIzYmNiLTg3OGQtNDYxYi04ZWM4LTAzYjM3YTExMzRlNyIsImlzcyI6IklCTSBBUEkgQ29ubmVjdCIsImV4cCI6MTc2NjUzMDQzMSwiaWF0IjoxNzY2NTMwMTMxLCJncmFudF90eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwicmVmcmVzaF90b2tlbiI6IjZkM2RkYzYxLWUyZWItNGRjMS04ZWYzLWY4NTBlN2I4YTM0MSIsInVzZXJfcmVnaXN0cnlfdXJsIjoiL2FwaS91c2VyLXJlZ2lzdHJpZXMvYTI0ODE5ZTctZWQzYy00YjY3LWE2M2EtM2Y5MTkwNWZlZDNmLzhmZDUyOTQxLTdjZDYtNDlkNi05ZTI4LTA5ZmQ5Y2I1N2NjNCIsInJlYWxtIjoicHJvdmlkZXIvaW50ZWdyYXRpb24ta2V5Y2xvYWsiLCJ1c2VybmFtZSI6ImludGVncmF0aW9uLWFkbWluIiwiaWRfdG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSXNJbXRwWkNJNklqVmtZbVUwTjJJNUxXSXlZV1F0TkdFNVppMDRZekUwTFRJek1tSTJPRFZtTVdRM1ppSjkuZXlKMWMyVnlibUZ0WlNJNkltbHVkR1ZuY21GMGFXOXVMV0ZrYldsdUlpd2liR0Z6ZEY5dVlXMWxJam9pUVdSdGFXNXBjM1J5WVhSdmNpSXNJbVpwY25OMFgyNWhiV1VpT2lKSmJuUmxaM0poZEdsdmJpSXNJbWxoZENJNk1UYzJOalV5T1Rnek4zMC5tTzcyRFNVbFFqWm5lWHlxX2VnLV9ORW1veXdremtYWnFLeHpWNy1RQ3ROMUM1QVczdUE3YWNpYW5icnBybkRoUnFmV2F0THVlM0ZTdkJSS25KS18wcTZBNy1qc2FwOUpHQkFQOWhrU2JyeXNBYUlvTkJTTkJOQ2RtQ1k5OFg1STAxdzNmcmtYNGZTSEtkcXVqWHBVdUhkU0pfcGdrZzRGc19NdHVHc1FVU0E0YWFibUJDYkI2TUFLZjJSZTRvNU1faVJpWHB3cHlsLTA2UjgwSzJlUnZzd0t4blFlcUFzUlRHQVdyeV9Wck1PQzRBZ1lSRHgtblZ2UFMtM0R1SF9qaElFVUFBWDNYbEFCQ2Y0di1VbHFjaXdDeS1tLUVORzBDbTBvbU1RNEV1cnRzM2FYcXJJNDYzRmlBMlFFT2xYRU0wUmNOM19uT3ZqNXNaV3RYWkRsVnciLCJzY29wZXMiOlsiY2xvdWQ6dmlldyIsImNsb3VkOm1hbmFnZSIsInByb3ZpZGVyLW9yZzp2aWV3IiwicHJvdmlkZXItb3JnOm1hbmFnZSIsIm9yZzp2aWV3Iiwib3JnOm1hbmFnZSIsInByb2R1Y3QtZHJhZnRzOnZpZXciLCJwcm9kdWN0LWRyYWZ0czplZGl0IiwiYXBpLWRyYWZ0czp2aWV3IiwiYXBpLWRyYWZ0czplZGl0IiwiY2hpbGQ6dmlldyIsImNoaWxkOmNyZWF0ZSIsImNoaWxkOm1hbmFnZSIsInByb2R1Y3Q6dmlldyIsInByb2R1Y3Q6c3RhZ2UiLCJwcm9kdWN0Om1hbmFnZSIsImFwcHJvdmFsOnZpZXciLCJhcHByb3ZhbDptYW5hZ2UiLCJhcGktYW5hbHl0aWNzOnZpZXciLCJhcGktYW5hbHl0aWNzOm1hbmFnZSIsImNvbnN1bWVyLW9yZzp2aWV3IiwiY29uc3VtZXItb3JnOm1hbmFnZSIsImFwcDp2aWV3OmFsbCIsImFwcDptYW5hZ2U6YWxsIiwibXk6dmlldyIsIm15Om1hbmFnZSIsIndlYmhvb2s6dmlldyJdLCJnZW5lcmF0ZWRfYnlfcnQiOiJlMjg0YjgzMi1lNDNmLTQwMjYtOTRlZi1iZTVlODVmZmE0ZjQifQ.jk6r9sjRSRWoGaOftgraWKXO19eRfnrAKgH_4kDb31oLNOW_baKWq_wsH3z8wfCmsw3E7PSgY9NFZjuXBWVeV3FTQWqtcpqVF0e6tREoMbdHGFFk5EbalrMQ_LGMglYWfRrS79rEv_MosBpy92YeUd96ePJZH8zCkL0Z3ua-IdzHqrKop3QFOimvKgUwL9PeYIu52cCEiXKsfKY8sCNGjm0hyNFwaD2eQo6sBStNofSYCz32_ISJdXZKkrkRrS0I8GkzKygOUTXHvoQbLMCuBKHWfteOp-sAVM2sESkqC62V6NQVVbV2H2NxHJjzePfCeZeufVFdur3NVmGdREiuhw",
+        "proxied_access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJxaEY0YWRta0VLLWU1eTlqdUo2ZS1uTEVGSGc5RWplNEVLZWlQdGQxVmM0In0.eyJleHAiOjE3NjY1MzA0MzEsImlhdCI6MTc2NjUzMDEzMSwianRpIjoib25ydHJ0Ojg0MzM2MDIyLTBmYjItMmJmNi0wYTM5LWExNzY3YmU4Yjc2OSIsImlzcyI6Imh0dHBzOi8va2V5Y2xvYWstaWJtLWNvbW1vbi1zZXJ2aWNlcy5hcHBzLml0ei1oamM4eWkuaHViMDEtbGIudGVjaHpvbmUuaWJtLmNvbS9yZWFsbXMvY2xvdWRwYWsiLCJzdWIiOiIwMDk1OWU1My0xZmNjLTQwMmUtYWM2Ny03MDA5MmNjY2E1YzgiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJhcGltLWRlbW8taW50ZWdyYXRpb24ta2V5Y2xvYWstY2xpZW50Iiwic2lkIjoiM2U1MDllMjEtMTgxZC0yZjNmLWE3MWYtZjRjZDg3OGY3N2RlIiwicmVzb3VyY2VfYWNjZXNzIjp7ImludGVncmF0aW9uLXdjenp2Ijp7InJvbGVzIjpbImFkbWluIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiSW50ZWdyYXRpb24gQWRtaW5pc3RyYXRvciIsInByZWZlcnJlZF91c2VybmFtZSI6ImludGVncmF0aW9uLWFkbWluIiwiZ2l2ZW5fbmFtZSI6IkludGVncmF0aW9uIiwiZmFtaWx5X25hbWUiOiJBZG1pbmlzdHJhdG9yIn0.kIokkPwY3kLNiXy-0F5R7oQBL79KRLbk68e66z4HsnUHryBm-aln87_ZPMBTiHICBuCI0a4EYaU1Wb8uAIb-L8gdag_872FhwxoToC4XX9X9Nuq3Am7QjEWcFh7mxX6Jjco-JKJuGXetri9rF_7OOIASvTUSUDqU0E1TeJtvqtZMbgr3Nd02VbEFBAkwbXd1Cz45pSLuZGtKkoqz3z44vr_c_q62sLAbxMZld7Q3dUXqvBkWjWHuXDvXDkJCFIDOw69Bc5cQeA0CJkzzMyrcdCFq6q7VwMeF2CSEla9W5G3QGiKxtYhTlOUoaDtpb_ZhKGthZHyQLRRcQAL9UJLbBA"
+      }
+  - name: Create Portal - Create Portal Server and Catalog
+    run: |
+      https://apim-demo-mgmt-api-manager-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/settings
+    result: |
+      {
+          "type": "catalog_setting",
+          "api_version": "2.0.0",
+          "name": "catalog-setting",
+          "user_registry_default_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/configured-catalog-user-registries/052cb0b8-779d-451e-8701-66fb7e130aa7",
+          "production_mode": false,
+          "portal": {
+              "type": "drupal",
+              "endpoint": "https://apim-demo-ptl-portal-web-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/cp4i-demo-org/sandbox",
+              "portal_service_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6/portal-services/ef5c5063-e566-48af-8707-76079ddcf8e6",
+              "state": "pending"
+          },
+          "product_lifecycle_approvals": [],
+          "task_self_approval": false,
+          "allowed_product_visibility": {
+              "view": {
+                  "type": "public",
+                  "enabled": false
+              },
+              "subscribe": {
+                  "type": "authenticated",
+                  "enabled": false
+              }
+          },
+          "application_lifecycle": {
+              "enabled": false
+          },
+          "consumer_self_service_onboarding": true,
+          "consumer_self_service_onboarding_approval": false,
+          "consumer_org_invitations_enabled": true,
+          "consumer_org_invitation_roles": [
+              "administrator",
+              "developer",
+              "viewer"
+          ],
+          "invitation_ttl": 172800,
+          "vanity_api_endpoint": {
+              "enabled": false,
+              "vanity_api_base_endpoints": []
+          },
+          "spaces_enabled": false,
+          "custom_notification_templates_enabled": false,
+          "email_sender": {
+              "custom": false
+          },
+          "hash_client_secret": false,
+          "subscription_task_approval_retention": 60,
+          "default_catalog": false,
+          "product_publish_validations": [
+              "emptyPathCheck_catalogScope",
+              "customPolicySchema_validation",
+              "enhancedOAIValidation_catalogScope"
+          ],
+          "override_invitation_ttl_for_all_consumer_orgs": false,
+          "gateway_supported_protocols": [
+              "https",
+              "wss"
+          ],
+          "consumer_self_service_onboarding_ttl": 259200,
+          "consumer_catalog_enabled": true,
+          "protected_properties": [],
+          "created_at": "2025-12-23T14:14:33.000Z",
+          "updated_at": "2025-12-23T22:49:15.275Z",
+          "org_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/orgs/269ef785-87bf-48d4-b321-c269b1cc2da6",
+          "catalog_url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578",
+          "url": "https://apim-demo-mgmt-platform-api-tools.apps.itz-hjc8yi.hub01-lb.techzone.ibm.com/api/catalogs/269ef785-87bf-48d4-b321-c269b1cc2da6/4f70b754-8b34-4c35-9248-a470f7e06578/settings"
+      }    
