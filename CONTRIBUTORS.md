@@ -51,7 +51,7 @@ Where possible, describe what is happening, not just where to click and what to 
 
 ### Language
 
-1. Use inclusive language. 
+1. Use inclusive language.
     1. Remember that plain language is inclusive language. Unly use metahpores worth explaining.
 1. Speak to the reader in the second person, imperative tense when it makes sense, but be careful about tone.
 1. All code samples **must** use the American dialect of English. Dialect usage is not specified for prose as long as it can be understood globally.

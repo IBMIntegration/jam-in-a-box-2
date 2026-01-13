@@ -113,6 +113,6 @@ spec:
     termination: passthrough
   to:
     kind: Service
-    name: ${GW_NAME}-lab-endpoints
+    name: ${GW_NAME}-lab-ports
     weight: 100
 EOF
