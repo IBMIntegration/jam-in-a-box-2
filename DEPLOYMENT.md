@@ -45,6 +45,7 @@ oc create configmap jam-setup-params -n default \
 ```
 
 **Parameters:**
+
 - `--fork=<org>`: GitHub organization/user (default: IBMIntegration)
 - `--navigator-password=<pwd>`: Password for htpasswd authentication (default: jam)
 - `--canary=<branch>`: Branch to use for integration-jam-in-a-box repo (default: redesign)
@@ -72,6 +73,7 @@ oc get pods -n jam-in-a-box
 ### 5. Access Application
 
 Get the route URL:
+
 ```bash
 oc get route integration-jam-in-a-box -n jam-in-a-box -o jsonpath='{.spec.host}'
 ```
@@ -83,6 +85,7 @@ Login with username: `jam` and the password you specified.
 ### Phase 1: Setup Pod Initialization
 
 The `setup.yaml` creates:
+
 1. **ServiceAccount** (`jam-setup-sa`) with cluster-admin role
 2. **ConfigMap** (`jam-setup-scripts`) with helper scripts:
    - `config-generator.js`: Generates runtime config from secrets/routes
@@ -281,7 +284,7 @@ oc create secret generic navigator-credentials \
 
 ## File Structure
 
-```
+```text
 integration-jam-in-a-box/
 ├── main.sh                          # Main setup orchestration
 ├── setup.yaml                       # One-line deployment manifest
@@ -412,6 +415,7 @@ oc delete pod jam-setup-pod -n jam-in-a-box
 ## Support
 
 For issues or questions:
+
 1. Check the logs using troubleshooting commands above
 2. Review `issues.md` for known issues
 3. Check GitHub Issues in the integration-jam-in-a-box repository

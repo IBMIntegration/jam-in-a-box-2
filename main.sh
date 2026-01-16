@@ -113,7 +113,13 @@ function filterUselessInfo {
   local kind
   kind="$(jq -r '.kind' <<< "$filtered" | tr '[:upper:]' '[:lower:]')"
   if [ "$kind" == "route" ]; then
+    local termination
+    termination=$(jq -r '.spec.tls.termination // empty' <<< "$filtered")
     filtered="$(jq 'del(.spec.tls)' <<< "$filtered")"
+    if [ -n "$termination" ]; then
+      filtered="$(jq --arg term "$termination" \
+        '.spec.tls.termination = $term' <<< "$filtered")"
+    fi
   fi
 
   echo "$filtered"

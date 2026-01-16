@@ -186,6 +186,8 @@ spec:
         volumeMounts:
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
+        - name: generated-configs
+          mountPath: /opt/app-root/template
         - name: materials
           mountPath: /materials
         livenessProbe:

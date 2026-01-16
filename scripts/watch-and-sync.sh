@@ -19,6 +19,22 @@ skipInitialSync=false
 
 lastLogIsAScan=false
 
+sync_folder=$(mktemp -d -t watch-and-sync-XXXX)
+cleanup() {
+  # Only delete if it still exists and is under /tmp (mktemp default)
+  if $debugMode; then
+    log_message "Caught exit signal but skipping cleaning up of" \
+      "${sync_folder} due to debug mode."
+  else
+    log_message "Cleaning up temporary folder: ${sync_folder}"
+    if [[ -n "${sync_folder:-}" && -d "${sync_folder}" ]]; then
+      rm -rf "${sync_folder}"
+    fi
+  fi
+}
+
+trap cleanup INT TERM EXIT
+
 for arg in "$@"; do
   case $arg in
     --debug)
@@ -203,6 +219,7 @@ function sync_files {
   local pathType=''
   local podName='archive-helper' container_name='nginx'
   local scanDir
+  local copy_fonts=true
 
   log_message "Full sync to archive-helper pod..."
 
@@ -227,23 +244,61 @@ function sync_files {
     debug_message scanDir = "$scanDir"
     debug_message container_dir = "$container_dir"
     debug_message remotePath = "$remotePath"
-    debug_message relativePath = "$relativePath"
+    debug_message pwd = "$(pwd)"
+    debug_message podName = "$podName"
+    debug_message container_name = "$container_name"
+    debug_message NAMESPACE = "$NAMESPACE"
 
     log_message "Syncing folder ($pathType): $relativePath"
+    
+    # Prepare the list of tar exclude patterns
+    local f tar_excludes=(--exclude='.git' --exclude='.DS_Store'
+      --exclude='*/._*' --exclude='._*')
+    # skip copying font folders if they already exist in the container
+    local fonts=("ibm-plex-mono" "ibm-plex-sans" "ibm-plex-serif" "plex-fonts")
+    if ! $copy_fonts; then
+      for f in "${fonts[@]}"; do
+        tar_excludes+=(--exclude="public/$f")
+      done
+    else
+      copy_fonts=false
+      for f in "${fonts[@]}"; do
+        if oc --namespace=${NAMESPACE} exec "${podName}" -c "$container_name" \
+          -- test -d "${container_dir}/${relativePath}/public/$f"; then
+          log_message "Excluding existing font folder from sync: fonts/$f"
+          tar_excludes+=(--exclude="public/$f")
+        else
+          copy_fonts=true
+        fi
+      done
+    fi
 
     # Execute the tar sync command
     # Use --no-xattrs to avoid macOS extended attribute warnings
     # Use --no-same-owner on extraction to avoid permission issues in OpenShift
-    if tar -C "$scanDir" -czf - \
-      --exclude='.git' --exclude='.DS_Store' \
-      --exclude='*/._*' --exclude='._*' \
-      --no-xattrs . | \
-      oc --namespace=${NAMESPACE} exec -i "${podName}" -c "$container_name" -- \
-      sh -c "tar -C '${remotePath}' -xzf - --no-same-owner && \
-            chmod -R a+w '${remotePath}'"; then
-      log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
+    local temp_file
+    temp_file="${sync_folder}/$(basename "${scanDir}").tar.gz"
+    if tar -C "$scanDir" -czvf "$temp_file" \
+      "${tar_excludes[@]}" \
+      --no-xattrs . 2>&1 | head -n 10 && echo '... [trimmed list]'; then
+      ls -l "$(dirname "$temp_file")"
+      log_message "✅ Sync file archive created successfully"
+      if oc --namespace=${NAMESPACE} cp "${temp_file}" \
+        "${podName}:${remotePath}" -c "$container_name"; then
+        log_message "✅ Sync file copied to pod successfully"
+        if kubectl exec -n ${NAMESPACE} "${podName}" -c "$container_name" \
+          -- sh -c "cd \"${remotePath}\" && tar xzvf '$(basename "${temp_file}")'"; then
+          log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
+        else
+          log_message "❌ Sync failed during extraction in pod"
+          return 1
+        fi
+      else
+        log_message "❌ Sync failed during copy to pod"
+        return 1
+      fi
     else
-      log_message "❌ Sync failed"
+      log_message "❌ Sync failed during tar creation at $temp_file"
       return 1
     fi
   done
