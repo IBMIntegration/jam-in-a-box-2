@@ -209,6 +209,11 @@ async function generateConfigObj() {
             ? 'https'
             : 'http';
       }
+      if (!routeInfo.servicePort) {
+        // this can be optional -- so we'll only fill it in if it's explicitly
+        // provided
+        routeInfo.servicePort = route.spec.port?.targetPort || null;
+      }
 
       out.hosts.push(routeInfo);
     }
