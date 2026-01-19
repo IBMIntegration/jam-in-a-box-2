@@ -197,7 +197,7 @@ async function generateConfigObj() {
         }
         if (routeInfo.service !== null) {
           routeInfo.service = `${
-            routeInfo.service}/${
+            routeInfo.service}.${
             route.metadata.namespace}.svc.cluster.local`;
         }
       }
