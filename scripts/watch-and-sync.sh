@@ -329,10 +329,10 @@ while true; do
   log_scan start
   for d in "${dirsToScan[@]}"; do
     debug_message "Scanning directory for changes since $lastSync: $d"
-    for update in $(scanForUpdates "$lastSync" "$d" || true); do
+    while IFS= read -r update; do
       debug_message " --> Modified file detected: $update"
       sync_file "$update"
-    done
+    done < <(scanForUpdates "$lastSync" "$d" || true)
   done
   if [ "${lastLogIsAScan}" == "true" ]; then
     log_scan end
