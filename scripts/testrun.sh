@@ -5,6 +5,55 @@
 
 set -e
 
+function show_help {
+  local rc="$1"
+  if [ -n "$rc" ]; then
+    rc=0
+  fi
+  cat << EOF
+Usage: ./scripts/testrun.sh [OPTIONS]
+
+Create an archive of integration-jam-in-a-box and deploy to nginx pod for testing.
+
+OPTIONS:
+  --help                          Show this help message and exit
+  --copy-materials                Copy materials from jam-materials directory to pod
+  --rebuild-materials-handler     Rebuild materials handler image in pod
+  --namespace=NAMESPACE           Specify the namespace (default: jam-in-a-box)
+
+DESCRIPTION:
+  This script performs the following operations:
+  1. Creates a tar archive of the integration-jam-in-a-box repository
+  2. Deploys the archive to an nginx pod (archive-helper) in OpenShift
+  3. Optionally copies materials and rebuilds the materials handler
+  4. Patches the jam-in-a-box deployment to use the htdocs-pvc volume
+  5. Restarts the jam-in-a-box deployment
+
+EXAMPLES:
+  # Basic usage - deploy archive only
+  ./scripts/testrun.sh
+
+  # Deploy with materials
+  ./scripts/testrun.sh --copy-materials
+
+  # Deploy and rebuild materials handler
+  ./scripts/testrun.sh --rebuild-materials-handler
+
+  # Deploy to custom namespace with materials
+  ./scripts/testrun.sh --namespace=my-namespace --copy-materials
+
+REQUIREMENTS:
+  - OpenShift CLI (oc) must be installed and configured
+  - Must have access to the target namespace
+  - Related repositories must be in sibling directories:
+    - ../jam-navigator
+    - ../jam-materials
+    - ../jam-materials-handler
+
+EOF
+  exit "$rc"
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 NAMESPACE="jam-in-a-box"
@@ -20,6 +69,9 @@ isCopyMaterials=false
 isRebuildMaterialsHandler=false
 for arg in "$@"; do
   case $arg in
+    --help|-h)
+      show_help
+      ;;
     --copy-materials)
       isCopyMaterials=true
       shift
@@ -33,6 +85,8 @@ for arg in "$@"; do
       shift
       ;;
     *)
+      echo "Unknown argument: $arg"
+      show_help 1
       ;;
   esac
 done

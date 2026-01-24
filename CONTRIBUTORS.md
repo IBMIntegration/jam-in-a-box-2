@@ -29,6 +29,7 @@ Where possible, describe what is happening, not just where to click and what to 
     1. `${toc}` adds a Table of Contents
     1. `${comment @author my comment text}` adds a comment that only appears on the screen when the site run in debug mode.
     1. `${issue @author my issue here}` same as `${comment ... }` but in red.
+1. For template variables, use `.md.hbs` files with `{{ variableName | default value }}` syntax for variables with defaults.
 1. When linking to other markdowns, link them as `.html`. The server will handle the difference.
 
 ### Diagramming

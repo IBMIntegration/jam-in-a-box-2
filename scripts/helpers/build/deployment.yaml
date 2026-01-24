@@ -193,6 +193,8 @@ spec:
           value: "0.0.0.0"
         - name: INCLUDES_SERVICE_PORT
           value: "{{PORT}}"
+        - name: TEMPLATE_CONFIG_PATH
+          value: "/opt/app-root/template/config.json"
         volumeMounts:
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
@@ -200,6 +202,12 @@ spec:
           mountPath: /opt/app-root/template
         - name: materials
           mountPath: /materials
+        - name: setup-output-config
+          mountPath: /opt/app-root/setup/setup.json
+          subPath: setup.json
+        - name: setup-secrets
+          mountPath: /opt/app-root/setup/secret.json
+          subPath: secret.json
         livenessProbe:
           httpGet:
             path: /health

@@ -5,6 +5,66 @@
 
 set -euo pipefail
 
+function show_help {
+  cat << EOF
+Usage: ./scripts/watch-and-sync.sh [OPTIONS]
+
+Watch for file changes and automatically sync them to the nginx container in OpenShift.
+
+OPTIONS:
+  --help, -h                      Show this help message and exit
+  --debug                         Enable debug mode (keeps temp folder on exit)
+  --debug=true|false              Explicitly set debug mode
+  -q, --quick, --skip-initial-sync
+                                  Skip the initial full sync on startup
+  --scan-htdocs                   Enable scanning of htdocs directory (default: true)
+  --scan-htdocs=true|false        Explicitly enable/disable htdocs scanning
+  --scan-htdocs=dir1,dir2         Scan specific subdirectories only
+  --scan-materials                Enable scanning of materials directory (default: true)
+  --scan-materials=true|false     Explicitly enable/disable materials scanning
+  --scan-materials=dir1,dir2      Scan specific subdirectories only
+
+DESCRIPTION:
+  This script continuously monitors specified directories for file changes and
+  automatically syncs them to the archive-helper pod in OpenShift. It performs
+  an initial full sync (unless --skip-initial-sync is used) and then watches
+  for changes every 2 seconds.
+
+  By default, both htdocs and materials directories are monitored. You can
+  selectively enable/disable or specify subdirectories to watch.
+
+EXAMPLES:
+  # Watch both htdocs and materials with initial sync
+  ./scripts/watch-and-sync.sh
+
+  # Skip initial sync for faster startup
+  ./scripts/watch-and-sync.sh --quick
+
+  # Watch only htdocs directory
+  ./scripts/watch-and-sync.sh --scan-htdocs --scan-materials=false
+
+  # Watch specific subdirectories
+  ./scripts/watch-and-sync.sh --scan-htdocs=public,assets
+
+  # Enable debug mode
+  ./scripts/watch-and-sync.sh --debug
+
+REQUIREMENTS:
+  - OpenShift CLI (oc) must be installed and configured
+  - archive-helper pod must be running in the jam-in-a-box namespace
+  - Related repositories must be in sibling directories:
+    - ../jam-navigator/htdocs
+    - ../jam-materials
+
+NOTES:
+  - The script uses a temporary folder for tar operations
+  - Press Ctrl+C to stop watching and clean up
+  - In debug mode, the temporary folder is preserved for inspection
+
+EOF
+  exit 0
+}
+
 # Get the directory of this script and set HTDOCS_DIR relative to it
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HTDOCS_DIR="$(cd "${SCRIPT_DIR}/../../jam-navigator/htdocs" && pwd)"
@@ -37,6 +97,9 @@ trap cleanup INT TERM EXIT
 
 for arg in "$@"; do
   case $arg in
+    --help|-h)
+      show_help
+      ;;
     --debug)
       debugMode="true"
       ;;
