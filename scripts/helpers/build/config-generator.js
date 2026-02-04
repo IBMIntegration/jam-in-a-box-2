@@ -189,6 +189,31 @@ async function generateConfigObj() {
           routeInfo[key] = route.metadata.annotations[annotation];
         }
       }
+      if (!routeInfo.service) {
+        // calculate the service to proxy through if it's not already in the
+        // annotations
+        if (route.spec.to.kind === 'Service') {
+          routeInfo.service = route.spec.to.name || null;
+        }
+        if (routeInfo.service !== null) {
+          routeInfo.service = `${
+            routeInfo.service}.${
+            route.metadata.namespace}.svc.cluster.local`;
+        }
+      }
+      if (!routeInfo.serviceProtocol) {
+        // calculate the service protocol to proxy with if it's not already
+        // in the annotations
+        routeInfo.serviceProtocol = ['edge', 'passthrough']
+          .includes(route.spec.tls?.termination)
+            ? 'https'
+            : 'http';
+      }
+      if (!routeInfo.servicePort) {
+        // this can be optional -- so we'll only fill it in if it's explicitly
+        // provided
+        routeInfo.servicePort = route.spec.port?.targetPort || null;
+      }
 
       out.hosts.push(routeInfo);
     }

@@ -53,6 +53,16 @@ data:
           proxy_set_header X-Forwarded-Proto $scheme;
         }
         
+        # Same as md-handler but you should already be authenticated
+        location /proxy {
+          auth_basic "Restricted Area";
+          proxy_pass http://localhost:8081;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
         # Handle HTML files with SSI enabled (but exclude /tracks paths)
         location ~ ^(?!/tracks).*\.html$ {
           ssi on;
@@ -183,11 +193,21 @@ spec:
           value: "0.0.0.0"
         - name: INCLUDES_SERVICE_PORT
           value: "{{PORT}}"
+        - name: TEMPLATE_CONFIG_PATH
+          value: "/opt/app-root/template/config.json"
         volumeMounts:
         - name: md-handler-config
           mountPath: /opt/app-root/src/config
+        - name: generated-configs
+          mountPath: /opt/app-root/template
         - name: materials
           mountPath: /materials
+        - name: setup-output-config
+          mountPath: /opt/app-root/setup/setup.json
+          subPath: setup.json
+        - name: setup-secrets
+          mountPath: /opt/app-root/setup/secret.json
+          subPath: secret.json
         livenessProbe:
           httpGet:
             path: /health

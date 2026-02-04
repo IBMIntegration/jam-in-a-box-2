@@ -5,6 +5,66 @@
 
 set -euo pipefail
 
+function show_help {
+  cat << EOF
+Usage: ./scripts/watch-and-sync.sh [OPTIONS]
+
+Watch for file changes and automatically sync them to the nginx container in OpenShift.
+
+OPTIONS:
+  --help, -h                      Show this help message and exit
+  --debug                         Enable debug mode (keeps temp folder on exit)
+  --debug=true|false              Explicitly set debug mode
+  -q, --quick, --skip-initial-sync
+                                  Skip the initial full sync on startup
+  --scan-htdocs                   Enable scanning of htdocs directory (default: true)
+  --scan-htdocs=true|false        Explicitly enable/disable htdocs scanning
+  --scan-htdocs=dir1,dir2         Scan specific subdirectories only
+  --scan-materials                Enable scanning of materials directory (default: true)
+  --scan-materials=true|false     Explicitly enable/disable materials scanning
+  --scan-materials=dir1,dir2      Scan specific subdirectories only
+
+DESCRIPTION:
+  This script continuously monitors specified directories for file changes and
+  automatically syncs them to the archive-helper pod in OpenShift. It performs
+  an initial full sync (unless --skip-initial-sync is used) and then watches
+  for changes every 2 seconds.
+
+  By default, both htdocs and materials directories are monitored. You can
+  selectively enable/disable or specify subdirectories to watch.
+
+EXAMPLES:
+  # Watch both htdocs and materials with initial sync
+  ./scripts/watch-and-sync.sh
+
+  # Skip initial sync for faster startup
+  ./scripts/watch-and-sync.sh --quick
+
+  # Watch only htdocs directory
+  ./scripts/watch-and-sync.sh --scan-htdocs --scan-materials=false
+
+  # Watch specific subdirectories
+  ./scripts/watch-and-sync.sh --scan-htdocs=public,assets
+
+  # Enable debug mode
+  ./scripts/watch-and-sync.sh --debug
+
+REQUIREMENTS:
+  - OpenShift CLI (oc) must be installed and configured
+  - archive-helper pod must be running in the jam-in-a-box namespace
+  - Related repositories must be in sibling directories:
+    - ../jam-navigator/htdocs
+    - ../jam-materials
+
+NOTES:
+  - The script uses a temporary folder for tar operations
+  - Press Ctrl+C to stop watching and clean up
+  - In debug mode, the temporary folder is preserved for inspection
+
+EOF
+  exit 0
+}
+
 # Get the directory of this script and set HTDOCS_DIR relative to it
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HTDOCS_DIR="$(cd "${SCRIPT_DIR}/../../jam-navigator/htdocs" && pwd)"
@@ -19,8 +79,27 @@ skipInitialSync=false
 
 lastLogIsAScan=false
 
+sync_folder=$(mktemp -d -t watch-and-sync-XXXX)
+cleanup() {
+  # Only delete if it still exists and is under /tmp (mktemp default)
+  if $debugMode; then
+    log_message "Caught exit signal but skipping cleaning up of" \
+      "${sync_folder} due to debug mode."
+  else
+    log_message "Cleaning up temporary folder: ${sync_folder}"
+    if [[ -n "${sync_folder:-}" && -d "${sync_folder}" ]]; then
+      rm -rf "${sync_folder}"
+    fi
+  fi
+}
+
+trap cleanup INT TERM EXIT
+
 for arg in "$@"; do
   case $arg in
+    --help|-h)
+      show_help
+      ;;
     --debug)
       debugMode="true"
       ;;
@@ -203,6 +282,7 @@ function sync_files {
   local pathType=''
   local podName='archive-helper' container_name='nginx'
   local scanDir
+  local copy_fonts=true
 
   log_message "Full sync to archive-helper pod..."
 
@@ -227,23 +307,61 @@ function sync_files {
     debug_message scanDir = "$scanDir"
     debug_message container_dir = "$container_dir"
     debug_message remotePath = "$remotePath"
-    debug_message relativePath = "$relativePath"
+    debug_message pwd = "$(pwd)"
+    debug_message podName = "$podName"
+    debug_message container_name = "$container_name"
+    debug_message NAMESPACE = "$NAMESPACE"
 
     log_message "Syncing folder ($pathType): $relativePath"
+    
+    # Prepare the list of tar exclude patterns
+    local f tar_excludes=(--exclude='.git' --exclude='.DS_Store'
+      --exclude='*/._*' --exclude='._*')
+    # skip copying font folders if they already exist in the container
+    local fonts=("ibm-plex-mono" "ibm-plex-sans" "ibm-plex-serif" "plex-fonts")
+    if ! $copy_fonts; then
+      for f in "${fonts[@]}"; do
+        tar_excludes+=(--exclude="public/$f")
+      done
+    else
+      copy_fonts=false
+      for f in "${fonts[@]}"; do
+        if oc --namespace=${NAMESPACE} exec "${podName}" -c "$container_name" \
+          -- test -d "${container_dir}/${relativePath}/public/$f"; then
+          log_message "Excluding existing font folder from sync: fonts/$f"
+          tar_excludes+=(--exclude="public/$f")
+        else
+          copy_fonts=true
+        fi
+      done
+    fi
 
     # Execute the tar sync command
     # Use --no-xattrs to avoid macOS extended attribute warnings
     # Use --no-same-owner on extraction to avoid permission issues in OpenShift
-    if tar -C "$scanDir" -czf - \
-      --exclude='.git' --exclude='.DS_Store' \
-      --exclude='*/._*' --exclude='._*' \
-      --no-xattrs . | \
-      oc --namespace=${NAMESPACE} exec -i "${podName}" -c "$container_name" -- \
-      sh -c "tar -C '${remotePath}' -xzf - --no-same-owner && \
-            chmod -R a+w '${remotePath}'"; then
-      log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
+    local temp_file
+    temp_file="${sync_folder}/$(basename "${scanDir}").tar.gz"
+    if tar -C "$scanDir" -czvf "$temp_file" \
+      "${tar_excludes[@]}" \
+      --no-xattrs . 2>&1 | head -n 10 && echo '... [trimmed list]'; then
+      ls -l "$(dirname "$temp_file")"
+      log_message "✅ Sync file archive created successfully"
+      if oc --namespace=${NAMESPACE} cp "${temp_file}" \
+        "${podName}:${remotePath}" -c "$container_name"; then
+        log_message "✅ Sync file copied to pod successfully"
+        if kubectl exec -n ${NAMESPACE} "${podName}" -c "$container_name" \
+          -- sh -c "cd \"${remotePath}\" && tar xzvf '$(basename "${temp_file}")'"; then
+          log_message "✅ Sync completed successfully at $(date '+%Y-%m-%d %H:%M:%S')"
+        else
+          log_message "❌ Sync failed during extraction in pod"
+          return 1
+        fi
+      else
+        log_message "❌ Sync failed during copy to pod"
+        return 1
+      fi
     else
-      log_message "❌ Sync failed"
+      log_message "❌ Sync failed during tar creation at $temp_file"
       return 1
     fi
   done
@@ -274,10 +392,10 @@ while true; do
   log_scan start
   for d in "${dirsToScan[@]}"; do
     debug_message "Scanning directory for changes since $lastSync: $d"
-    for update in $(scanForUpdates "$lastSync" "$d" || true); do
+    while IFS= read -r update; do
       debug_message " --> Modified file detected: $update"
       sync_file "$update"
-    done
+    done < <(scanForUpdates "$lastSync" "$d" || true)
   done
   if [ "${lastLogIsAScan}" == "true" ]; then
     log_scan end
